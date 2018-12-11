@@ -48,7 +48,7 @@ client.on('message', msg => {
         if (helper.DTubeLink(msg.content)) {
             const link = helper.DTubeLink(msg.content)
             let video = new Discord.RichEmbed();
-            video.setFooter("Powered by d.tube Curation")
+            video.setFooter("Powered by oneloved.tube Curation")
                 .setTimestamp();
             let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').split('/');
             steem.api.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
@@ -60,12 +60,12 @@ client.on('message', msg => {
                         let json = JSON.parse(result.json_metadata);
                         let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.created + 'Z')));
                         if (posted_ago > 2880) {
-                            msg.channel.send("This post is too old for curation through d.tube");
+                            msg.channel.send("This post is too old for curation through oneloved.tube");
                         } else {
                             json.tags.splice(4)
                             video.setTitle(json.video.info.title.substr(0, 1024))
                                 .setAuthor("@" + json.video.info.author, null, "https://d.tube/#!/c/" + json.video.info.author)
-                                .setThumbnail('https://snap1.d.tube/ipfs/' + json.video.info.snaphash)
+                                .setThumbnail('https://cloudflare-ipfs.com/ipfs/' + json.video.info.snaphash)
                                 .setDescription("[Watch Video](" + link + ")")
                                 .addField("Tags", json.tags.join(', '))
                                 .addField("Uploaded", posted_ago + ' minutes ago', true);
@@ -125,15 +125,15 @@ client.on('message', msg => {
         if (faq.length > 0) {
             if (faq === 'list') {
                 let faqs = Object.keys(config.mod_settings.faq);
-                let faq_embed = new Discord.RichEmbed().setTimestamp().setFooter("Powered by d.tube")
-                    .setTitle("This are the help topics I know").setDescription(faqs.join(", "))
+                let faq_embed = new Discord.RichEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
+                    .setTitle("These are the help topics I know").setDescription(faqs.join(", "))
                     .addField("Usage:", "!faq *topic*")
                     .setThumbnail('https://image.flaticon.com/icons/png/512/258/258349.png');
                 msg.channel.send({embed: faq_embed});
             } else {
                 if (config.mod_settings.faq.hasOwnProperty(faq)) {
                     faq = config.mod_settings.faq[faq];
-                    let faq_embed = new Discord.RichEmbed().setTimestamp().setFooter("Powered by d.tube")
+                    let faq_embed = new Discord.RichEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
                         .setTitle(faq[0]).setDescription(faq[1])
                         .setThumbnail('https://image.flaticon.com/icons/png/512/258/258349.png');
                     msg.channel.send({embed: faq_embed});
