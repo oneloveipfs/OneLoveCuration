@@ -5,7 +5,7 @@ let database = require('mysql').createConnection(config.database);
 
 database.connect((err) => {
     if (err) throw err;
-    console.log("Database connection etablished!");
+    console.log("Database connection established!");
 });
 
 database.addMessage = async (id, author, permlink) => {

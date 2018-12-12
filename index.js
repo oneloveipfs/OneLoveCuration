@@ -53,7 +53,7 @@ client.on('message', msg => {
             let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').split('/');
             steem.api.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
                 if (err) {
-                    msg.reply("Oups! An error occured. See the logs for more details");
+                    msg.reply("Oops! An error occured. Please check the logs!");
                     console.log(err);
                 } else {
                     try {
@@ -90,7 +90,7 @@ client.on('message', msg => {
                                                     }
                                                     video.addField("ERROR", errmsg);
                                                     embed.edit({embed: video})
-                                                    console.error('Vote failed',)
+                                                    console.error('Failed to vote!')
                                                     embed.react(config.discord.curation.other_emojis.cross);
                                                 })
                                             })
@@ -110,7 +110,7 @@ client.on('message', msg => {
                         }
 
                     } catch (err) {
-                        msg.reply("Oups! An error occured. See the logs for more detauls");
+                        msg.reply("Oops! An error occured. Please check the logs!");
                         console.log(err);
                     }
                 }
