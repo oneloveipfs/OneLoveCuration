@@ -1,6 +1,6 @@
 # DTube Curation Bot
 
-This bot is used on the official DTube Discord Server ([join now](https://discord.gg/dtube)) to curate videos posted on [d.tube](https://d.tube)
+This bot is used on the official OneLoveDTube Discord Server ([join now](https://discord.gg/Sc4utKr)) to curate videos posted on [d.tube](https://d.tube)
 
 
 ### Requirements
@@ -9,7 +9,7 @@ To run this bot you need nodeJS and a MySQL database.
 
 ### Installation
 
-    git clone https://github.com/dtube/dtube-curation.git
+    git clone https://github.com/techcoderx/dtube-curation.git
     cd dtube-curation
     npm install
     
@@ -31,10 +31,10 @@ To start the bot just run
     
     node index.js
     
-Or use `forever` for automatic restarts whenever the bot throws an unexpected error, for example when the steem node does not reply.
+Or use `PM2` for automatic restarts whenever the bot throws an unexpected error, for example when the steem node does not reply.
 
-    npm install forever -g
-    forever start index.js
+    npm install pm2 -g
+    pm2 start index.js
     
     
 ### Licence
