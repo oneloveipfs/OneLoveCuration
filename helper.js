@@ -90,18 +90,20 @@ database.updateReactions = async (id, reactions) => {
 };
 
 function calculateVote(post) {
-    if (post.one_hundred >= 3)
+    if (post.one_hundred >= 2)
         return 10000
+    if (post.one_hundred == 1)
+        return 7700
 
     let weight = 0
 
     // add up all the weights
     for (let i = 0; i < post.game_die; i++)
-        weight += 100 * (1 + Math.floor(Math.random() * 6));
+        weight += 3 * 100 * (1 + Math.floor(Math.random() * 6));
     for (let i = 0; i < post.heart; i++)
-        weight += 1500;
+        weight += 2700;
     for (let i = 0; i < post.up; i++)
-        weight += 500;
+        weight += 1700;
     for (let i = 0; i < post.down; i++)
         weight -= 500;
 
