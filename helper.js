@@ -99,7 +99,7 @@ function calculateVote(post) {
 
     // add up all the weights
     for (let i = 0; i < post.game_die; i++)
-        weight += 3 * 100 * (1 + Math.floor(Math.random() * 6));
+        weight += 100 * Math.floor(Math.random()*(18-3+1)+3);
     for (let i = 0; i < post.heart; i++)
         weight += 2700;
     for (let i = 0; i < post.up; i++)
