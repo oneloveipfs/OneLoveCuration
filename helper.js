@@ -110,8 +110,13 @@ function calculateVote(post) {
     // if there is a disagrement, no vote
     if (weight > 0 && post.down > 0)
         return 0
-
-    return weight
+    
+    // maximum voting weight possible is 100%
+    if (weight > 10000) {
+        return 10000   
+    } else {
+        return weight
+    }
 }
 
 function countReaction(message) {
