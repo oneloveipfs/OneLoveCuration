@@ -9,8 +9,8 @@ To run this bot you need nodeJS and a MySQL database.
 
 ### Installation
 
-    git clone https://github.com/techcoderx/dtube-curation.git
-    cd dtube-curation
+    git clone https://github.com/techcoderx/OneLoveCuration.git
+    cd OneLoveCuration
     npm install
     
 ### Database Setup
