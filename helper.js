@@ -170,6 +170,8 @@ module.exports = {
                             }]
                         ]
 
+                        var wifs = [config.steem.wif]
+
                         if (weight >= config.resteem.threshold) {
                             // Resteem post if voting weight is high enough
                             ops.push(['custom_json',{
@@ -182,12 +184,13 @@ module.exports = {
                                     permlink: message.permlink
                                 }])
                             }])
+                            wifs.push(config.resteem.wif)
                         }
 
                         steem.broadcast.send({
                             extensions: [],
                             operations: ops
-                        },[config.steem.wif,config.resteem.wif],(err,result_bc) => {
+                        },wifs,(err,result_bc) => {
                             if (err) {
                                 reject(err);
                             } else {
