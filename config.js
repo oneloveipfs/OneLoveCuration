@@ -2,8 +2,8 @@ let config = {
     discord: {
         token: "MY_SUPER_SECRET_BOT_TOKEN",
         curation: {
-            channel: "459820794273333263", // the channel where the curation takes place
-            guild: "347020217966395393", // the guild where the curation takes place
+            channel: "522225179510833174", // the channel where the curation takes place
+            guild: "520893506366210068", // the guild where the curation takes place
             curation_emojis: { // this emojis are used by the bot to calculate the vote
                 up: "👍",
                 down: "👎",
@@ -27,6 +27,11 @@ let config = {
         wif: "5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg",
         account: "guest123"
     },
+    resteem: {
+        wif: "",
+        account: "",
+        threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
+    },
     database: {
         host: "localhost",
         user: "root",
@@ -35,7 +40,7 @@ let config = {
     },
     mod_settings: {
         enabled: true,
-        group_name: "mods",
+        group_name: "get-help",
         faq: {
             "error404": [ // the key. Usage like !faq error
                 "I'm getting an ERROR 404 while pinning videos. What is wrong?", // the displayed question

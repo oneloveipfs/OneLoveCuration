@@ -135,7 +135,7 @@ module.exports = {
         let words = str.split(' ')
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
-            if (word.startsWith('https://d.tube'))
+            if (word.startsWith('https://d.tube') || word.startsWith('https://dtube.network'))
                 return word
         }
         return
@@ -160,24 +160,44 @@ module.exports = {
                         reject('Weight=0')
                     } else {
                         console.log('voting', message.author + '/' + message.permlink, weight)
-                        steem.broadcast.vote(
-                            config.steem.wif,
-                            config.steem.account, // Voter
-                            message.author, // Author
-                            message.permlink, // Permlink
-                            weight,
-                            (err, result_bc) => {
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    let sql = "UPDATE message SET voted = 1, vote_weight = ? WHERE author = ? and permlink = ?";
-                                    database.query(sql, [weight, message.author, message.permlink], (err, result) => {
-                                        console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink)
-                                        resolve(result_bc);
-                                    })
-                                }
+                            
+                        let ops = [
+                            ['vote',{
+                                voter: config.steem.account,
+                                author: message.author,
+                                permlink: message.permlink,
+                                weight: weight
+                            }]
+                        ]
+
+                        if (weight >= config.resteem.threshold) {
+                            // Resteem post if voting weight is high enough
+                            ops.push(['custom_json',{
+                                required_auths: [],
+                                required_posting_auths: [config.resteem.account],
+                                id: 'follow',
+                                json: JSON.stringify(['reblog',{
+                                    account: config.resteem.account,
+                                    author: message.author,
+                                    permlink: message.permlink
+                                }])
+                            }])
+                        }
+
+                        steem.broadcast.send({
+                            extensions: [],
+                            operations: ops
+                        },[config.steem.wif,config.resteem.wif],(err,result_bc) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                let sql = "UPDATE message SET voted = 1, vote_weight = ? WHERE author = ? and permlink = ?";
+                                database.query(sql, [weight, message.author, message.permlink], (err, result) => {
+                                    console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink)
+                                    resolve(result_bc);
+                                })
                             }
-                        );
+                        })
                     }
 
 

@@ -7,6 +7,7 @@ const helper = require('./helper');
 
 let scheduledVotes = [];
 
+steem.api.setOptions({url:'https://anyx.io'})
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -50,7 +51,7 @@ client.on('message', msg => {
             let video = new Discord.RichEmbed();
             video.setFooter("Powered by oneloved.tube Curation")
                 .setTimestamp();
-            let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').split('/');
+            let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.network/v/', '').split('/');
             steem.api.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
                 if (err) {
                     msg.reply("Oops! An error occured. Please check the logs!");
