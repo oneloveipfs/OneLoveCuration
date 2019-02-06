@@ -11,6 +11,6 @@
   "dependencies": {
     "discord.js": "^11.3.2",
     "mysql": "^2.15.0",
-    "steem": "^0.7.1"
+    "steem": "^0.7.4"
   }
 }

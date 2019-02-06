@@ -146,20 +146,6 @@ module.exports = {
         let diff = (new Date()).getTime() - posted.getTime();
         return (diff / 60000);
     },
-    getVotingMana: (account) => {
-        steem.api.getAccounts([account],(err,res) => {
-            if (err) {
-                console.log(err)
-                return null
-            } else {
-                var secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
-                var mana = res[0].voting_power + (10000 * secondsago / 432000)
-                mana = Math.min(mana/100,100).toFixed(2)
-                return(mana)
-            }
-
-        })
-    },
     vote: async (message, client) => {
         return new Promise((resolve, reject) => {
             client

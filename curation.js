@@ -48,87 +48,92 @@ client.on('message', msg => {
     if (msg.channel.id === config.discord.curation.channel) {
         if (helper.DTubeLink(msg.content)) {
             // Check if voting mana is above threshold
-            var mana;
-            if (config.voting_threshold > 0) {
-                // Get voting mana if threshold is set
-                mana = helper.getVotingMana(config.mainAccount)
-                if (mana === null) {
-                    msg.channel.send('An error occured while getting voting mana. Check the log for more details!')
+            steem.api.getAccounts([config.mainAccount],(err,res) => {
+                if (err) {
+                    msg.channel.send('An error occured. Please check the logs!')
                     return
-                } else if (mana < config.voting_threshold) {
+                }
+                var secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
+                var mana = res[0].voting_power + (10000 * secondsago / 432000)
+                mana = Math.min(mana/100,100).toFixed(2)
+                console.log(mana)
+                if (mana < config.voting_threshold) {
                     msg.channel.send('Our current voting mana is ' + mana + '% but our minimum threshold for curation is ' + config.voting_threshold + '%. Please wait for our mana to recharge and try again later.')
                     return
-                }
-            }
-            const link = helper.DTubeLink(msg.content)
-            let video = new Discord.RichEmbed();
-            video.setFooter("Powered by oneloved.tube Curation")
-                .setTimestamp();
-            let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.network/v/', '').split('/');
-            steem.api.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
-                if (err) {
-                    msg.reply("Oops! An error occured. Please check the logs!");
-                    console.log(err);
                 } else {
-                    try {
-                        let json = JSON.parse(result.json_metadata);
-                        let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.created + 'Z')));
-                        if (posted_ago > 2880) {
-                            msg.channel.send("This post is too old for curation through oneloved.tube");
+                    const link = helper.DTubeLink(msg.content)
+                    let video = new Discord.RichEmbed();
+                    video.setFooter("Powered by oneloved.tube Curation")
+                        .setTimestamp();
+                    let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.network/v/', '').split('/');
+                    steem.api.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
+                        if (err) {
+                            msg.reply("Oops! An error occured. Please check the logs!");
+                            console.log(err);
                         } else {
-                            json.tags.splice(4)
-                            video.setTitle(json.video.info.title.substr(0, 1024))
-                                .setAuthor("@" + json.video.info.author, null, "https://dtube.network/#!/c/" + json.video.info.author)
-                                .setThumbnail('https://cloudflare-ipfs.com/ipfs/' + json.video.info.snaphash)
-                                .setDescription("[Watch Video](" + link + ")")
-                                .addField("Tags", json.tags.join(', '))
-                                .addField("Uploaded", posted_ago + ' minutes ago', true);
-                            let exist = await helper.database.existMessage(json.video.info.author, json.video.info.permlink);
-                            if (!exist) {
-                                msg.channel.send({embed: video}).then(async (embed) => {
-                                    embed.react(config.discord.curation.other_emojis.clock).then(clockReaction => {
-                                        setTimeout(() => {
-                                            clockReaction.remove()
-                                            helper.database.getMessage(json.video.info.author, json.video.info.permlink).then(message => {
-                                                helper.vote(message, client).then(async (tx) => {
-                                                    let msg = await helper.database.getMessage(json.video.info.author, json.video.info.permlink);
-                                                    embed.react(config.discord.curation.other_emojis.check);
-                                                    video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
-                                                    embed.edit({embed: video})
-                                                }).catch(error => {
-                                                    let errmsg = "An error occured while voting. Please check the logs!";
-                                                    try {
-                                                        errmsg = error.cause.data.stack[0].format.split(":")[1]
-                                                    } catch (e) {
+                            try {
+                                let json = JSON.parse(result.json_metadata);
+                                let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.created + 'Z')));
+                                if (posted_ago > 2880) {
+                                    msg.channel.send("This post is too old for curation through oneloved.tube");
+                                } else {
+                                    json.tags.splice(4)
+                                    video.setTitle(json.video.info.title.substr(0, 1024))
+                                        .setAuthor("@" + json.video.info.author, null, "https://dtube.network/#!/c/" + json.video.info.author)
+                                        .setThumbnail('https://cloudflare-ipfs.com/ipfs/' + json.video.info.snaphash)
+                                        .setDescription("[Watch Video](" + link + ")")
+                                        .addField("Tags", json.tags.join(', '))
+                                        .addField("Uploaded", posted_ago + ' minutes ago', true);
+                                    let exist = await helper.database.existMessage(json.video.info.author, json.video.info.permlink);
+                                    if (!exist) {
+                                        msg.channel.send({embed: video}).then(async (embed) => {
+                                            embed.react(config.discord.curation.other_emojis.clock).then(clockReaction => {
+                                                setTimeout(() => {
+                                                    clockReaction.remove()
+                                                    helper.database.getMessage(json.video.info.author, json.video.info.permlink).then(message => {
+                                                        helper.vote(message, client).then(async (tx) => {
+                                                            let msg = await helper.database.getMessage(json.video.info.author, json.video.info.permlink);
+                                                            embed.react(config.discord.curation.other_emojis.check);
+                                                            video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
+                                                            embed.edit({embed: video})
+                                                        }).catch(error => {
+                                                            let errmsg = "An error occured while voting. Please check the logs!";
+                                                            try {
+                                                                errmsg = error.cause.data.stack[0].format.split(":")[1]
+                                                            } catch (e) {
 
-                                                    }
-                                                    video.addField("ERROR", errmsg);
-                                                    embed.edit({embed: video})
-                                                    console.error('Failed to vote!')
-                                                    embed.react(config.discord.curation.other_emojis.cross);
-                                                })
-                                            })
-                                        }, 60 * 1000 * config.discord.curation.timeout_minutes)
-                                    });
-                                    helper.database.addMessage(embed.id, json.video.info.author, json.video.info.permlink)
-                                }).catch(error => {
-                                    console.log(error)
-                                });
-                            } else {
-                                msg.reply("This video has already been posted to the curation channel.").then(reply => {
-                                    setTimeout(() => {
-                                        reply.delete();
-                                    }, 5000)
-                                })
+                                                            }
+                                                            video.addField("ERROR", errmsg);
+                                                            embed.edit({embed: video})
+                                                            console.error('Failed to vote!')
+                                                            embed.react(config.discord.curation.other_emojis.cross);
+                                                        })
+                                                    })
+                                                }, 60 * 1000 * config.discord.curation.timeout_minutes)
+                                            });
+                                            helper.database.addMessage(embed.id, json.video.info.author, json.video.info.permlink)
+                                        }).catch(error => {
+                                            console.log(error)
+                                        });
+                                    } else {
+                                        msg.reply("This video has already been posted to the curation channel.").then(reply => {
+                                            setTimeout(() => {
+                                                reply.delete();
+                                            }, 5000)
+                                        })
+                                    }
+                                }
+
+                            } catch (err) {
+                                msg.reply("Oops! An error occured. Please check the logs!");
+                                console.log(err);
                             }
                         }
-
-                    } catch (err) {
-                        msg.reply("Oops! An error occured. Please check the logs!");
-                        console.log(err);
-                    }
+                    })
                 }
             })
+
+            
 
 
         }
