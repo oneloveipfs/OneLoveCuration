@@ -32,6 +32,8 @@ let config = {
         account: "",
         threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
     },
+    mainAccount: "onelovedtube", // default account for obtaining voting mana
+    voting_threshold: 90, // minimum voting mana required to curate videos
     database: {
         host: "localhost",
         user: "root",

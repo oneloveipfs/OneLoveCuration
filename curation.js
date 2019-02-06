@@ -47,6 +47,19 @@ client.on('message', msg => {
     }
     if (msg.channel.id === config.discord.curation.channel) {
         if (helper.DTubeLink(msg.content)) {
+            // Check if voting mana is above threshold
+            var mana;
+            if (config.voting_threshold > 0) {
+                // Get voting mana if threshold is set
+                mana = helper.getVotingMana(config.mainAccount)
+                if (mana === null) {
+                    msg.channel.send('An error occured while getting voting mana. Check the log for more details!')
+                    return
+                } else if (mana < config.voting_threshold) {
+                    msg.channel.send('Our current voting mana is ' + mana + '% but our minimum threshold for curation is ' + config.voting_threshold + '%. Please wait for our mana to recharge and try again later.')
+                    return
+                }
+            }
             const link = helper.DTubeLink(msg.content)
             let video = new Discord.RichEmbed();
             video.setFooter("Powered by oneloved.tube Curation")
@@ -65,7 +78,7 @@ client.on('message', msg => {
                         } else {
                             json.tags.splice(4)
                             video.setTitle(json.video.info.title.substr(0, 1024))
-                                .setAuthor("@" + json.video.info.author, null, "https://d.tube/#!/c/" + json.video.info.author)
+                                .setAuthor("@" + json.video.info.author, null, "https://dtube.network/#!/c/" + json.video.info.author)
                                 .setThumbnail('https://cloudflare-ipfs.com/ipfs/' + json.video.info.snaphash)
                                 .setDescription("[Watch Video](" + link + ")")
                                 .addField("Tags", json.tags.join(', '))
