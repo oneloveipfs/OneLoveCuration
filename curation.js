@@ -56,7 +56,6 @@ client.on('message', msg => {
                 var secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
                 var mana = res[0].voting_power + (10000 * secondsago / 432000)
                 mana = Math.min(mana/100,100).toFixed(2)
-                console.log(mana)
                 if (mana < config.voting_threshold) {
                     msg.channel.send('Our current voting mana is ' + mana + '% but our minimum threshold for curation is ' + config.voting_threshold + '%. Please wait for our mana to recharge and try again later.')
                     return
@@ -132,10 +131,43 @@ client.on('message', msg => {
                     })
                 }
             })
+        }
 
-            
+        if (msg.content == '!mana') {
+            steem.api.getAccounts([config.mainAccount],(err,res) => {
+                if (err) {
+                    msg.channel.send('An error occured. Please check the logs!')
+                    return
+                }
 
+                // Obtain mana
+                var secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
+                var mana = res[0].voting_power + (10000 * secondsago / 432000)
+                mana = Math.min(mana/100,100).toFixed(2)
 
+                var active = 'Active'
+                // Decide whethher if curation is active
+                if (mana < config.voting_threshold) {
+                    active = 'Inactive'
+                }
+
+                var statusText = 'Curation status: ' + active
+                if (mana < config.voting_threshold) {
+                    active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(mana,config.voting_threshold)
+                }
+
+                if (mana != 100) {
+                    // Calculate full recharge time
+                    active += '\nTime for a full recharge: ' + helper.getRechargeTime(mana,100)
+                } else {
+                    // Mana is fully charged
+                    active += '\nMana is fully charged.'
+                }
+
+                var embed = new Discord.RichEmbed();
+                embed.addField('Current voting mana for @' + config.mainAccount + ': ' + mana + '%','Curation status: ' + active)
+                msg.channel.send(embed)
+            })
         }
     }
     

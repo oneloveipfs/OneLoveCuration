@@ -146,6 +146,24 @@ module.exports = {
         let diff = (new Date()).getTime() - posted.getTime();
         return (diff / 60000);
     },
+    getRechargeTime: (currentMana, manaToGetRecharged) => {
+        // Calculate recharge time to threshold mana
+        var rechargeTimeMins = (manaToGetRecharged - currentMana) / (5/6)
+        var rechargeTimeHours = 0
+        while(rechargeTimeMins > 1) {
+            rechargeTimeHours = rechargeTimeHours + 1
+            rechargeTimeMins = rechargeTimeMins - 1
+        }
+        rechargeTimeMins = rechargeTimeMins * 60
+
+        var rechargeTime;
+        if (rechargeTimeHours > 0) {
+            rechargeTime = rechargeTimeHours + ' hours and ' + Math.floor(rechargeTimeMins) + ' minutes'
+        } else {
+            rechargeTime = Math.floor(rechargeTimeMins) + ' minutes'
+        }
+        return rechargeTime
+    },
     vote: async (message, client) => {
         return new Promise((resolve, reject) => {
             client
