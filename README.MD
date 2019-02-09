@@ -1,6 +1,6 @@
 # DTube Curation Bot
 
-This bot is used on the official OneLoveDTube Discord Server ([join now](https://discord.gg/Sc4utKr)) to curate videos posted on [d.tube](https://d.tube)
+This bot is used on the official OneLoveDTube Discord Server ([join now](https://discord.gg/Sc4utKr)) to curate videos posted on [d.tube](https://d.tube) and [dtube.network](https://dtube.network)
 
 
 ### Requirements
@@ -23,18 +23,18 @@ Open ``config.js`` and paste in your discord bot token, the curation channel and
 If you want to use the ``!faq`` command update the faq object to your needs. If you dont want to use this command just
 set ``mod_settings.enabled`` to `false`.
 
-At last change the default steem credentials used by this bot to cast upvotes.
+At last change the default steem credentials used by this bot to cast upvotes and resteems.
 
 ### Startup
 
 To start the bot just run
     
-    node index.js
+    node curation.js
     
 Or use `PM2` for automatic restarts whenever the bot throws an unexpected error, for example when the steem node does not reply.
 
     npm install pm2 -g
-    pm2 start index.js
+    pm2 start curation.js
     
     
 ### Licence
