@@ -203,6 +203,8 @@ client.on('messageReactionRemove', (reaction, user) => {
     helper.database.updateReactions(reaction.message.id, helper.countReaction(reaction.message))
 });
 
+client.on('error', (error) => console.log('Discord error: ' + error))
+
 client.login(config.discord.token);
 
 process.on('uncaughtException', function (error) {
