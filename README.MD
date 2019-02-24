@@ -29,12 +29,12 @@ At last change the default steem credentials used by this bot to cast upvotes an
 
 To start the bot just run
     
-    node curation.js
+    node index.js
     
 Or use `PM2` for automatic restarts whenever the bot throws an unexpected error, for example when the steem node does not reply.
 
     npm install pm2 -g
-    pm2 start curation.js
+    pm2 start index.js
     
     
 ### Licence

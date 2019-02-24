@@ -26,6 +26,5 @@ CREATE TABLE IF NOT EXISTS `feedback` (
   `message` varchar(7777) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `author` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `permlink` varchar(280) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `posted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -87,7 +87,8 @@ client.on('message', msg => {
                                 msg.channel.send(video).then(async (embed) => {
                                     try {
                                         const permlink = steem.formatter.commentPermlink(authorInformation[0], authorInformation[1]);
-                                        let id = await steem.broadcast.comment(config.steem.wif, authorInformation[0], authorInformation[1], config.steem.account, permlink, "", feedback, JSON.stringify({
+                                        let feedbackFooter = '\n![](https://cdn.discordapp.com/attachments/429110955914428426/520078555204288524/dtubeanimated2.gif)\nThis feedback was posted by ' + msg.author.username + ' through [OneLoveCuration Discord Bot](https://github.com/techcoderx/OneLoveCuration).'
+                                        let id = await steem.broadcast.comment(config.steem.wif, authorInformation[0], authorInformation[1], config.steem.account, permlink, "", feedback + feedbackFooter, JSON.stringify({
                                             app: "onelovedtube/feedback"
                                         }));
                                         video.addField("Commented", "[View on Steemit](https://steemit.com/@" + config.steem.account + "/" + permlink + ")");
@@ -153,7 +154,6 @@ client.on('message', msg => {
                     active = 'Inactive'
                 }
 
-                var statusText = 'Curation status: ' + active
                 if (mana < config.voting_threshold) {
                     active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(mana,config.voting_threshold)
                 }
