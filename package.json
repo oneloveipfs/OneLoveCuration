@@ -2,7 +2,7 @@
   "name": "onelovecuration",
   "version": "2.0.0",
   "description": "The curation bot for onelovedtube",
-  "main": "curation.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
