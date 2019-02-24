@@ -19,3 +19,13 @@ CREATE TABLE IF NOT EXISTS `message` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `message_discord_id_uindex` (`discord_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `feedback` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `discord` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` varchar(7777) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `author` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `permlink` varchar(280) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `posted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -54,16 +54,16 @@ client.on('message', msg => {
                 if (video !== undefined) {
                     const feedback = parts.slice(1).join(" ");
 
-                    let authorInformation = video.replace('/#!', '').replace('https://d.tube/v/', '').split('/');
+                    let authorInformation = video.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.network/v/','').split('/');
                     helper.database.feedBackExist(authorInformation[0], authorInformation[1]).then(exist => {
                         if (exist.length !== 0) {
                             console.log(exist[0].discord)
                             let user = client.guilds.get(config.discord.curation.guild).members.get(exist[0].discord)
                             let video = new Discord.RichEmbed();
-                            video.setFooter("Powered by d.tube Curation")
+                            video.setFooter("Powered by oneloved.tube Curation")
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
-                                .addField("View Video", "[Watch Video](https://d.tube/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
+                                .addField("View Video", "[Watch Video](https://dtube.network/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
                                 .setDescription("This video already received feedback from <@" + user.user.id + '>')
                                 .addField("Feedback", exist[0].message, true)
                                 .setColor("LUMINOUS_VIVID_PINK");
@@ -74,11 +74,11 @@ client.on('message', msg => {
                                 let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.created + 'Z')));
                                 console.log(json.video)
                                 let video = new Discord.RichEmbed();
-                                video.setFooter("Powered by d.tube Curation")
+                                video.setFooter("Powered by oneloved.tube Curation")
                                     .setTimestamp()
-                                    .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
-                                    .setAuthor("@" + json.video.info.author, 'https://login.oracle-d.com/' + json.video.info.author + '.jpg', "https://d.tube/#!/c/" + json.video.info.author)
-                                    .setThumbnail('https://snap1.d.tube/ipfs/' + json.video.info.snaphash)
+                                    .setTitle("Feedback for: @" + json.video.info.author + '/' + json.video.info.permlink)
+                                    .setAuthor("@" + json.video.info.author, 'https://login.oracle-d.com/' + json.video.info.author + '.jpg', "https://dtube.network/#!/c/" + json.video.info.author)
+                                    .setThumbnail('https://cloudflare-ipfs.com/ipfs/' + json.video.info.snaphash)
                                     .setDescription("[Watch Video](" + link + ")")
                                     .addField("Tags", json.tags.join(', '))
                                     .addField("Uploaded", posted_ago + ' minutes ago', true)
@@ -88,7 +88,7 @@ client.on('message', msg => {
                                     try {
                                         const permlink = steem.formatter.commentPermlink(authorInformation[0], authorInformation[1]);
                                         let id = await steem.broadcast.comment(config.steem.wif, authorInformation[0], authorInformation[1], config.steem.account, permlink, "", feedback, JSON.stringify({
-                                            app: "dtube/feedback"
+                                            app: "onelovedtube/feedback"
                                         }));
                                         video.addField("Commented", "[View on Steemit](https://steemit.com/@" + config.steem.account + "/" + permlink + ")");
 
@@ -99,10 +99,12 @@ client.on('message', msg => {
                                             embed.edit({embed: video})
                                         })
                                     } catch (e) {
-                                        video.addField("Info", "Something went wrong while broadcasting the feedback to the blockchain. Please manually verify that the feedback was posted. If not try again. If this still does not work: Don't panic. Contact <@356200653640695811>")
+                                        video.addField("Info", "Something went wrong while broadcasting the feedback to the blockchain. Please manually verify that the feedback was posted. If not try again. If this still does not work: Don't panic. Contact <@366094647250124807>")
                                         embed.edit({embed: video})
                                     }
 
+                                }).catch((error) => {
+                                    console.log(error)
                                 })
 
                             })
@@ -112,22 +114,22 @@ client.on('message', msg => {
             } else if(parts.length === 1) {
                 const video = helper.DTubeLink(parts[0].trim());
                 if (video !== undefined) {
-                    let authorInformation = video.replace('/#!', '').replace('https://d.tube/v/', '').split('/');
+                    let authorInformation = video.replace('/#!', '').replace('https://dtube.network/v/', '').replace('https://d.tube/v/','').split('/');
                     helper.database.feedBackExist(authorInformation[0], authorInformation[1]).then(exist => {
                         if (exist.length === 1) {
                             console.log(exist[0].discord)
                             let user = client.guilds.get(config.discord.curation.guild).members.get(exist[0].discord)
                             let video = new Discord.RichEmbed();
-                            video.setFooter("Powered by d.tube Curation")
+                            video.setFooter("Powered by oneloved.tube Curation")
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
-                                .addField("View Video", "[Watch Video](https://d.tube/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
+                                .addField("View Video", "[Watch Video](https://dtube.network/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
                                 .setDescription("This video already received feedback from <@" + user.user.id + '>')
                                 .addField("Feedback", exist[0].message, true)
                                 .setColor("LUMINOUS_VIVID_PINK");
                             msg.channel.send(video);
                         } else {
-                            const emote = client.emojis.find(emoji => emoji.name === "DTube_D");
+                            const emote = client.emojis.find(emoji => emoji.name === "ONELOVE");
                             msg.reply(`This video has not received any feedback. ${emote}`)
                         }
                     });
@@ -205,7 +207,7 @@ client.on('message', msg => {
                                         .setDescription("[Watch Video](" + link + ")")
                                         .addField("Tags", json.tags.join(', '))
                                         .addField("Uploaded", posted_ago + ' minutes ago', true)
-                                        .setColor("DARK_NAVY");
+                                        .setColor(0x3fafff);
                                     let exist = await helper.database.existMessage(json.video.info.author, json.video.info.permlink);
                                     if (!exist) {
                                         msg.channel.send({embed: video}).then(async (embed) => {
