@@ -1,9 +1,9 @@
 let config = {
     discord: {
-        token: "MY_SUPER_SECRET_BOT_TOKEN",
+        token: "NDk0NDk2Nzc2NzIwNjEzMzg5.DvKJow.TSdurjWfUe0YqxOKqzfRdR0lAT4",
         curation: {
-            channel: "522225179510833174", // the channel where the curation takes place
-            guild: "520893506366210068", // the guild where the curation takes place
+            channel: "522337378329952256", // the channel where the curation takes place
+            guild: "418646135725359104", // the guild where the curation takes place
             curation_emojis: { // this emojis are used by the bot to calculate the vote
                 up: "👍",
                 down: "👎",
@@ -24,12 +24,12 @@ let config = {
         }
     },
     steem: {
-        wif: "5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg",
-        account: "guest123"
+        wif: "5KfuRJNrGbv8znh6FwgP6GyTV3FaqESC1uikhpBfBX8TFhSE6FM",
+        account: "onelovecuration"
     },
     resteem: {
-        wif: "",
-        account: "",
+        wif: "5JPqN9HMMTWDzcaksQ97h2TBhaMh8s2YjDzuBorrqkmdoaXx8sK",
+        account: "onelovedtube",
         threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
     },
     mainAccount: "onelovedtube", // default account for obtaining voting mana
@@ -37,8 +37,9 @@ let config = {
     database: {
         host: "localhost",
         user: "root",
-        password: "1234",
-        database: "dtube"
+        password: "Wjf9qWF2VaKN",
+        database: "dtube",
+	charset: "utf8mb4"
     },
     mod_settings: {
         enabled: true,
