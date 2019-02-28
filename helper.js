@@ -119,20 +119,20 @@ database.addFeedback = async (from, msg, author, permlink) => {
 };
 
 function calculateVote(post) {
-    if (post.one_hundred >= 2)
+    if (post.one_hundred >= 3)
         return 10000
-    if (post.one_hundred == 1)
+    if (post.one_hundred == 2)
         return 7700
 
     let weight = 0
 
     // add up all the weights
     for (let i = 0; i < post.game_die; i++)
-        weight += 100 * Math.floor(Math.random()*(18-3+1)+3);
+        weight += 100 * Math.floor(Math.random()*(12-2+1)+2);
     for (let i = 0; i < post.heart; i++)
-        weight += 2700;
-    for (let i = 0; i < post.up; i++)
         weight += 1700;
+    for (let i = 0; i < post.up; i++)
+        weight += 1000;
     for (let i = 0; i < post.down; i++)
         weight -= 500;
 
