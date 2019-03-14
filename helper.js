@@ -25,6 +25,20 @@ database.addMessage = async (id, author, permlink) => {
     })
 };
 
+database.getMessageSummary = async(days) => {
+    return new Promise((resolve, reject) => {
+        let sql = "select Count(id) as count, posted from message m WHERE m.posted > NOW() - INTERVAL ? DAY GROUP BY Day(m.posted);";
+        database.query(sql,[days], (err, result) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            } else {
+                resolve(result.reverse());
+            }
+        })
+    })
+};
+
 database.getMessagesToVote = async () => {
     return new Promise((resolve, reject) => {
         let sql = "SELECT * FROM message WHERE voted = 0";
@@ -199,7 +213,7 @@ module.exports = {
             if (word.startsWith('https://d.tube') || word.startsWith('https://dtube.network'))
                 return word
         }
-        return
+
     },
     calculateVote,
     countReaction,
