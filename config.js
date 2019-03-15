@@ -45,6 +45,7 @@ let config = {
         "captainbob",
         "alphasteem"
     ],
+    status_command_enabled: true,
     database: {
         host: "localhost",
         user: "root",

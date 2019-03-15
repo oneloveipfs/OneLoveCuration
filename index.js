@@ -117,6 +117,7 @@ client.on('message', msg => {
     }
 
     if (msg.content.startsWith("!status")) {
+        if (config.status_command_enabled != true) return
 
         // TODO: complete list of team members
         const team = config.team
