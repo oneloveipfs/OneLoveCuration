@@ -1,5 +1,6 @@
 const config = require('./config');
 const steem = require('steem');
+const asyncjs = require('async')
 
 let database = require('mysql').createConnection(config.database);
 
@@ -96,22 +97,7 @@ database.countMessages = async () => {
             }
         })
     })
-};
-
-database.countCurators = async () => {
-    return new Promise((resolve, reject) => {
-        let sql = "SELECT Count(DISTINCT(discord_id)) as count FROM message";
-        database.query(sql, (err, result) => {
-            if (err) {
-                reject(err);
-                console.log(err);
-            } else {
-                resolve(result);
-            }
-        })
-    })
-};
-
+}
 
 database.existMessage = async (author, permlink) => {
     let message = await database.getMessage(author, permlink);
@@ -205,6 +191,45 @@ function countReaction(message) {
     return reactions;
 }
 
+function getVotingMana(account,cb) {
+    steem.api.getAccounts(account,(err,res) => {
+        if (err) {
+            cb(err)
+            return
+        }
+        let secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
+        var mana = res[0].voting_power + (10000 * secondsago / 432000)
+        mana = Math.min(mana/100,100).toFixed(2)
+        cb(null,mana)
+    })
+}
+
+function getVoteValue(weight,voter,completion) {
+    asyncjs.parallel({
+        rewardPool: (cb) => {
+            steem.api.getRewardFund('post',(err,res) => cb(err,res))
+        },
+        account: (cb) => {
+            steem.api.getAccounts([voter],(err,res) => cb(err,res))
+        },
+        priceFeed: (cb) => {
+            steem.api.getCurrentMedianHistoryPrice((err,res) => cb(err,res))
+        }
+    },(errors,results) => {
+        if (errors) return completion(errors,null)
+        let secondsago = (new Date - new Date(results.account[0].last_vote_time + 'Z')) / 1000
+        var mana = results.account[0].voting_power + (10000 * secondsago / 432000)
+        mana = Math.min(mana/100,100).toFixed(2)
+        let feed = Number(results.priceFeed.base.slice(0,-4))
+        let total_vests = Number(results.account[0].vesting_shares.slice(0,-6)) - Number(results.account[0].delegated_vesting_shares.slice(0,-6)) + Number(results.account[0].received_vesting_shares.slice(0,-6))
+        let final_vest = total_vests * 1e6
+        let power = (mana * weight / 10000) / 50
+        let rshares = power * final_vest / 10000
+        let estimate = rshares / Number(results.rewardPool.recent_claims) * Number(results.rewardPool.reward_balance.slice(0,-6)) * feed * 100
+        completion(null,estimate)
+    })
+}
+
 module.exports = {
     DTubeLink: (str) => {
         let words = str.split(' ')
@@ -221,6 +246,8 @@ module.exports = {
         let diff = (new Date()).getTime() - posted.getTime();
         return (diff / 60000);
     },
+    getVotingMana,
+    getVoteValue,
     getRechargeTime: (currentMana, manaToGetRecharged) => {
         // Calculate recharge time to threshold mana
         var rechargeTimeMins = (manaToGetRecharged - currentMana) / (5/6)

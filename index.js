@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const steem = require("steem");
+const asyncjs = require('async')
 const fetch = require("node-fetch");
 const ChartjsNode = require('chartjs-node');
 const chartNode = new ChartjsNode(720, 720 * .5);
@@ -90,75 +91,15 @@ function createChartOptions(DB_RESULT) {
 }
 
 function countCurators() {
-    return client.guilds.get(config.discord.curation.guild).channels.get(config.discord.curation.channel).permissionOverwrites.filter(x => x.type === 'member').array().length
+    return client.guilds.get(config.discord.curation.guild).roles.get(config.discord.curation.role).members.size
 }
 
 async function getSP(account) {
     let sp = await steem.api.getAccountsAsync([account]);
     let props = await steem.api.getDynamicGlobalPropertiesAsync();
     sp = sp[0];
-    return steem.formatter.vestToSteem(parseFloat(sp.vesting_shares) + parseFloat(sp.received_vesting_shares), props.total_vesting_shares, props.total_vesting_fund_steem)
+    return steem.formatter.vestToSteem(parseFloat(sp.vesting_shares) + parseFloat(sp.received_vesting_shares) - parseFloat(sp.delegated_vesting_shares), props.total_vesting_shares, props.total_vesting_fund_steem)
 
-}
-
-async function getVoteValue(vw, user) {
-    let vp = parseInt(((await getvotingpower(user))).toFixed(0));
-    let sp = await getSP(user);
-    let a, n, r, i, o, p = 1e4;
-
-    function calculate(sp, vp, vw) {
-        let e = sp, //sp
-            t = vp, //vp
-            n = vw, // vw
-            r = e / a,
-            m = parseInt(100 * t * (100 * n) / p);
-        m = parseInt((m + 49) / 50);
-        let l = parseInt(r * m * 100) * i * o;
-        return l.toFixed(2);
-    }
-
-    return new Promise((resolve, reject) => {
-        steem.api.getRewardFund("post", function (e, t) {
-            n = t.reward_balance,
-                r = t.recent_claims,
-                i = n.replace(" STEEM", "") / r;
-            steem.api.getCurrentMedianHistoryPrice(function (e, t) {
-                o = t.base.replace(" SBD", "") / t.quote.replace(" STEEM", "");
-                steem.api.getDynamicGlobalProperties(function (t, n) {
-                    a = n.total_vesting_fund_steem.replace(" STEEM", "") / n.total_vesting_shares.replace(" VESTS", "");
-                    resolve(calculate(sp, vp, vw));
-                });
-            })
-
-        });
-    })
-}
-
-function getvotingpower(account_name) {
-    return new Promise(resolve => {
-        steem.api.getAccounts([account_name], function (err, account) {
-
-            account = account[0];
-            if (account === undefined) {
-
-                console.log(account_name)
-            }
-            const totalShares = parseFloat(account.vesting_shares) + parseFloat(account.received_vesting_shares) - parseFloat(account.delegated_vesting_shares) - parseFloat(account.vesting_withdraw_rate);
-
-            const elapsed = Math.floor(Date.now() / 1000) - account.voting_manabar.last_update_time;
-            const maxMana = totalShares * 1000000;
-            // 432000 sec = 5 days
-            let currentMana = parseFloat(account.voting_manabar.current_mana) + elapsed * maxMana / 432000;
-
-            if (currentMana > maxMana) {
-                currentMana = maxMana;
-            }
-
-            const currentManaPerc = currentMana * 100 / maxMana;
-
-            return resolve(currentManaPerc);
-        });
-    });
 }
 
 async function getBlacklistEntries(user) {
@@ -178,65 +119,62 @@ client.on('message', msg => {
     if (msg.content.startsWith("!status")) {
 
         // TODO: complete list of team members
-        const team = [
-            "heimindanger",
-            "nannal",
-            "steeminator3000",
-            "wehmoen",
-            "goyard"
-        ];
+        const team = config.team
 
         let user = msg.content.replace("!status", "").trim();
 
         if (steem.utils.validateAccountName(user) !== null) {
-            user = "dtube"
+            user = config.mainAccount
         }
 
         steem.api.getAccounts([user], (err, res) => {
             if (err || res.length === 0) {
                 msg.reply(user + " seems not to be a valid Steem account");
             } else {
-                helper.database.countMessages().then(count => {
-                    helper.database.countCurators().then(curators => {
-                        getSP(user).then(sp => {
-                            getvotingpower(user).then(vp => {
-                                getVoteValue(vp, user).then(vote_value => {
-                                    getBlacklistEntries(user).then(blacklist => {
-                                        let status = new Discord.RichEmbed();
-                                        status.setFooter("Powered by d.tube Curation 🦄");
-                                        if (user === "dtube") {
-                                            status.setTitle("DTube Curation Bot - Status Overview");
-                                        } else {
-                                            status.setTitle("@" + user + " - Status Overview");
-                                        }
+                asyncjs.parallel({
+                    msgCount: (cb) => {
+                        helper.database.countMessages().then(count => cb(null,count))
+                    },
+                    spCount: (cb) => {
+                        getSP(user).then(sp => cb(null,sp))
+                    },
+                    mana: (cb) => {
+                        helper.getVotingMana([user],(err,vp) => cb(err,vp))
+                    },
+                    voteValue: (cb) => {
+                        helper.getVoteValue(10000,user,(err,vote_value) => cb(err,vote_value))
+                    },
+                    blacklist: (cb) => {
+                        getBlacklistEntries(user).then(blacklist => cb(null,blacklist))
+                    }
+                },(errors,results) => {
+                    let status = new Discord.RichEmbed();
+                    status.setFooter("Powered by oneloved.tube Curation");
+                    if (user === config.mainAccount) {
+                        status.setTitle("OveLoveCuration Bot - Status Overview");
+                    } else {
+                        status.setTitle("@" + user + " - Status Overview");
+                    }
 
-                                        status.setThumbnail('https://login.oracle-d.com/' + user + ".jpg");
-                                        status.setColor(0x0878e0);
-                                        if (user === "dtube") {
-                                            status.addField("Total Curated Videos:", count[0].count, true);
-                                            status.addField("Total Number of Curators:", countCurators(), true);
-                                        }
+                    status.setThumbnail('https://login.oracle-d.com/' + user + ".jpg");
+                    status.setColor(0x009aa3);
+                    if (user === config.mainAccount) {
+                        status.addField("Total Curated Videos:", results.msgCount[0].count, true);
+                        status.addField("Total Number of Curators:", countCurators(), true);
+                    }
 
-                                        status.addField("Current 100% Vote Value:", vote_value + "$", true);
-                                        status.addField("Current Steem Power:", sp.toFixed(3) + "SP", true);
-                                        status.addField("Current Voting Power:", vp.toFixed(2) + "%", true);
+                    status.addField("Current 100% Vote Value:","$" + results.voteValue.toFixed(3), true);
+                    status.addField("Current Steem Power:", results.spCount.toFixed(3) + " SP", true);
+                    status.addField("Current Voting Power:", results.mana + "%", true);
 
-                                        if (blacklist.count > 0 && !team.includes(user)) {
-                                            status.addField("Blacklisted:",blacklist.text);
-                                        }
+                    if (results.blacklist.count > 0 && !team.includes(user)) {
+                        status.addField("Blacklisted:",results.blacklist.text);
+                    }
 
-                                        if (team.includes(user)) {
-                                            status.addField("DTube Team Member:","Yes 🤟");
-                                        }
-                                        msg.channel.send(status)
-                                    });
-
-                                })
-                            })
-                        })
-
-                    })
-
+                    if (team.includes(user)) {
+                        status.addField("OneLoveDTube Team Member:","Yes 🤟");
+                    }
+                    msg.channel.send(status)
                 })
             }
         });
@@ -362,16 +300,11 @@ client.on('message', msg => {
                 }
             }
         } else if (msg.content == '!mana') {
-            steem.api.getAccounts([config.mainAccount],(err,res) => {
+            helper.getVotingMana([config.mainAccount],(err,mana) => {
                 if (err) {
                     msg.channel.send('An error occured. Please check the logs!')
                     return
                 }
-                // Obtain mana
-                var secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
-                var mana = res[0].voting_power + (10000 * secondsago / 432000)
-                mana = Math.min(mana/100,100).toFixed(2)
-
                 var active = 'Active'
                 // Decide whethher if curation is active
                 if (mana < config.voting_threshold) {

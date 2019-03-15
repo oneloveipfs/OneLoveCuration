@@ -4,6 +4,7 @@ let config = {
         curation: {
             channel: "522337378329952256", // the channel where the curation takes place
             guild: "418646135725359104", // the guild where the curation takes place
+            role: "473760034023538689", // Discord role ID for the CurationTeam (in onelovedtube server) role
             curation_emojis: { // this emojis are used by the bot to calculate the vote
                 up: "👍",
                 down: "👎",
@@ -34,6 +35,16 @@ let config = {
     },
     mainAccount: "onelovedtube", // default account for obtaining voting mana
     voting_threshold: 90, // minimum voting mana required to curate videos
+    team: [
+        "d00k13",
+        "graylan",
+        "gray00",
+        "dnews",
+        "toddmck",
+        "techcoderx",
+        "captainbob",
+        "alphasteem"
+    ],
     database: {
         host: "localhost",
         user: "root",

@@ -9,11 +9,12 @@
   "author": "techcoderx",
   "license": "MIT",
   "dependencies": {
-    "chart.js": "^2.7.3",
+    "async": "^2.6.2",
+    "chart.js": "^2.8.0",
     "chartjs-node": "^1.7.1",
-    "discord.js": "^11.3.2",
-    "mysql": "^2.15.0",
-    "steem": "^0.7.4",
-    "node-fetch": "^2.3.0"
+    "discord.js": "^11.4.2",
+    "mysql": "^2.16.0",
+    "node-fetch": "^2.3.0",
+    "steem": "^0.7.4"
   }
 }
