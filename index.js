@@ -24,6 +24,10 @@ client.on('ready', () => {
         })
 });
 
+function countCurators() {
+    return client.guilds.get(config.discord.curation.guild).channels.get(config.discord.curation.channel).permissionOverwrites.filter(x => x.type === 'member').array().length
+}
+
 async function getSP(account) {
     let sp = await steem.api.getAccountsAsync([account]);
     let props = await steem.api.getDynamicGlobalPropertiesAsync();
@@ -147,7 +151,7 @@ client.on('message', msg => {
                                         status.setColor(0x0878e0);
                                         if (user === "dtube") {
                                             status.addField("Total Curated Videos:", count[0].count, true);
-                                            status.addField("Total Number of Curators:", curators[0].count, true);
+                                            status.addField("Total Number of Curators:", countCurators(), true);
                                         }
 
                                         status.addField("Current 100% Vote Value:", vote_value + "$", true);
@@ -266,7 +270,6 @@ client.on('message', msg => {
                     });
                 }
             }
-
         } else if (msg.content == '!mana') {
             steem.api.getAccounts([config.mainAccount],(err,res) => {
                 if (err) {
