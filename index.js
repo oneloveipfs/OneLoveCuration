@@ -5,6 +5,8 @@ const asyncjs = require('async')
 const fetch = require("node-fetch");
 const ChartjsNode = require('chartjs-node');
 const chartNode = new ChartjsNode(720, 720 * .5);
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: 'https://f99fbe1e544b441c8ff7851df1267049@sentry.io/1430210' });
 
 const config = require('./config');
 const helper = require('./helper');
@@ -454,9 +456,12 @@ client.on('error', (error) => console.log('Discord error: ' + error))
 client.login(config.discord.token);
 
 process.on('uncaughtException', function (error) {
-    console.log(error)
+    Sentry.captureException(error);
+    process.exit(1)
 });
 
 process.on('unhandledRejection', function (error, p) {
-    console.log(error, p)
+    console.log(p);
+    Sentry.captureException(error);
+    process.exit(1)
 });

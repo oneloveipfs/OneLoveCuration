@@ -25,11 +25,11 @@ let config = {
         }
     },
     steem: {
-        wif: "5KfuRJNrGbv8znh6FwgP6GyTV3FaqESC1uikhpBfBX8TFhSE6FM",
+        wif: "",
         account: "onelovecuration"
     },
     resteem: {
-        wif: "5JPqN9HMMTWDzcaksQ97h2TBhaMh8s2YjDzuBorrqkmdoaXx8sK",
+        wif: "",
         account: "onelovedtube",
         threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
     },
