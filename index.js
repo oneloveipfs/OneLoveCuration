@@ -80,7 +80,6 @@ function createChartOptions(DB_RESULT) {
                 yAxes: [{
                     ticks: {
                         fontColor: "#FFF",
-                        beginAtZero: false
                     }
                 }], xAxes: [{
                     ticks: {
