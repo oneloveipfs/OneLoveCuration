@@ -138,9 +138,7 @@ client.on('message', msg => {
                     return chartNode.writeImageToFile('image/png', './statistics.png');
                 })
                 .then(() => {
-                    msg.channel.send(buildCurationTable(data), {files: ["./statistics.png"]}).then(() => {
-                        console.log("CHECK")
-                    })
+                    msg.channel.send(buildCurationTable(data), {files: ["./statistics.png"]})
                 });
         })
     }
