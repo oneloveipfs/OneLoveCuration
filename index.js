@@ -80,7 +80,7 @@ function createChartOptions(DB_RESULT) {
                 yAxes: [{
                     ticks: {
                         fontColor: "#FFF",
-                        beginAtZero: true
+                        beginAtZero: false
                     }
                 }], xAxes: [{
                     ticks: {
@@ -116,6 +116,34 @@ async function getBlacklistEntries(user) {
 client.on('message', msg => {
     if (msg.author.bot) {
         return;
+    }
+
+    if (msg.content.startsWith("!chart")) {
+        let days = parseInt(msg.content.replace("!chart", "").trim());
+        if (isNaN(days)) {
+            days = 7
+        }
+        if (days < 1 || days > 14) {
+            days = 7
+        }
+
+        helper.database.getMessageSummary(days).then(data => {
+            chartNode.drawChart(createChartOptions(data))
+                .then(() => {
+                    return chartNode.getImageBuffer('image/png');
+                })
+                .then(buffer => {
+                    return chartNode.getImageStream('image/png');
+                })
+                .then(streamResult => {
+                    return chartNode.writeImageToFile('image/png', './statistics.png');
+                })
+                .then(() => {
+                    msg.channel.send(buildCurationTable(data), {files: ["./statistics.png"]}).then(() => {
+                        console.log("CHECK")
+                    })
+                });
+        })
     }
 
     if (msg.content.startsWith("!status")) {
@@ -184,34 +212,6 @@ client.on('message', msg => {
     }
 
     if (msg.channel.id === config.discord.curation.channel) {
-
-        if (msg.content.startsWith("!chart")) {
-            let days = parseInt(msg.content.replace("!chart","").trim());
-            if (isNaN(days)) {
-                days = 7
-            }
-            if (days < 1 || days > 14) {
-                days = 7
-            }
-
-            helper.database.getMessageSummary(days).then(data => {
-                chartNode.drawChart(createChartOptions(data))
-                    .then(() => {
-                        return chartNode.getImageBuffer('image/png');
-                    })
-                    .then(buffer => {
-                        return chartNode.getImageStream('image/png');
-                    })
-                    .then(streamResult => {
-                        return chartNode.writeImageToFile('image/png', './statistics.png');
-                    })
-                    .then(() => {
-                        msg.channel.send(buildCurationTable(data), {files: ["./statistics.png"]}).then(() => {
-                            console.log("CHECK")
-                        })
-                    });
-            })
-        }
         if (msg.content.startsWith("!feedback")) {
             let parts = msg.content.replace("!feedback").trim().split(" ").slice(1);
             if (parts.length >= 2) {
