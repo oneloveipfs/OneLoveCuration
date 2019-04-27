@@ -348,6 +348,7 @@ client.on('message', msg => {
                     video.setFooter("Powered by oneloved.tube Curation")
                         .setTimestamp();
                     let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.network/v/', '').split('/');
+                    if (config.autovoteList.includes(authorInformation[0])) return msg.channel.send('Author is in our autovote list therefore cannot be manually curated.')
                     steem.api.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
                         if (err) {
                             msg.reply("Oops! An error occured. Please check the logs!");
@@ -374,7 +375,7 @@ client.on('message', msg => {
                                                 setTimeout(() => {
                                                     clockReaction.remove()
                                                     helper.database.getMessage(json.video.info.author, json.video.info.permlink).then(message => {
-                                                        helper.vote(message, client).then(async (tx) => {
+                                                        helper.vote(message, client, authorInformation[0]).then(async (tx) => {
                                                             let msg = await helper.database.getMessage(json.video.info.author, json.video.info.permlink);
                                                             embed.react(config.discord.curation.other_emojis.check);
                                                             video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);

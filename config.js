@@ -45,13 +45,35 @@ let config = {
         "captainbob",
         "alphasteem"
     ],
+    autovoteList: [
+        "mvd",
+        "tanbay",
+        "theycallmedan",
+        "d00k13",
+        "steemersayu907",
+        "tibfox",
+        "vladivostok",
+        "mariannewest",
+        "freewritehouse",
+        "vaultec",
+        "deepsouthpiddlin",
+        "priyanarc",
+        "pixiepost"
+    ],
+    blacklistedUsers: [
+        "muhammadrizki96",
+        "jacksonchakma",
+        "kawaiicrush",
+        "steemnurse",
+        "girlygamer"
+    ],
     status_command_enabled: true,
     database: {
         host: "localhost",
         user: "root",
         password: "Wjf9qWF2VaKN",
         database: "dtube",
-	charset: "utf8mb4"
+	    charset: "utf8mb4"
     },
     mod_settings: {
         enabled: true,
