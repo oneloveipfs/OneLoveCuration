@@ -62,8 +62,8 @@ let config = {
                 "Either the resolution you're trying to pin is not available as a playback option on DTube, or the video file doesn't exists on DTube's servers. Perhaps try pinning another resolution of the video?" // and the displayed answer
             ],
             "error404_uploader": [
-                "I'm getting a 404 error when I am trying to run pinning commands on videos uploaded through our uploader. What is happening?",
-                "All videos uploaded through our uploader are not required to run the pinning commands because files are already pinned to our servers."
+                "I'm getting a 404 error when I am trying to run pinning commands on videos uploaded through 3rd party uploaders. What is happening?",
+                "Our pinning bot downloads videos from video.dtube.top gateway only, which is not connected to the IPFS network. If you need those videos to be pinned, please contact an admin for assistance."
             ],
             "error504": [
                 "I'm getting another ERROR but this time it's code 504!",
@@ -95,7 +95,7 @@ let config = {
             ],
             "uploader": [
                 "Where can I find answers to my questions regarding the uploader?",
-                "The uploader FAQ can be found [here](https://github.com/techcoderx/ipfsVideoUploader/blob/master/FAQ.md)."
+                "The uploader FAQ can be found [here](https://github.com/techcoderx/ipfsVideoUploader/blob/master/docs/FAQ.md)."
             ]
         }
     }
