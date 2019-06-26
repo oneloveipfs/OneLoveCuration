@@ -1,6 +1,7 @@
 const config = require('./config');
 const steem = require('steem');
 const asyncjs = require('async')
+const javalon = require('javalon');
 
 let database = require('mysql').createConnection(config.database);
 
@@ -283,56 +284,84 @@ module.exports = {
                     if (weight === 0) {
                         reject('Weight=0')
                     } else {
-                        console.log('voting', message.author + '/' + message.permlink, weight)
-                            
-                        let ops = [
-                            ['vote',{
-                                voter: config.steem.account,
+                        console.log('voting', message.author + '/' + message.permlink, weight);
+
+                        // voting on avalon
+                        var newTx = {
+                            type: javalon.TransactionType.VOTE,
+                            data: {
                                 author: message.author,
-                                permlink: message.permlink,
-                                weight: weight
-                            }]
-                        ]
-
-                        var wifs = [config.steem.wif]
-
-                        if (weight >= config.resteem.threshold) {
-                            // Resteem post if voting weight is high enough
-                            ops.push(['custom_json',{
-                                required_auths: [],
-                                required_posting_auths: [config.resteem.account],
-                                id: 'follow',
-                                json: JSON.stringify(['reblog',{
-                                    account: config.resteem.account,
-                                    author: message.author,
-                                    permlink: message.permlink
-                                }])
-                            }])
-
-                            if (config.resteem.wif !== config.steem.wif)
-                                wifs.push(config.resteem.wif)
+                                link: message.permlink,
+                                vt: weight*config.avalon.vtMultiplier,
+                                tag: ''
+                            }
                         }
+                        
+                        newTx = javalon.sign(config.avalon.wif, config.avalon.account, newTx)
 
-                        steem.broadcast.send({
-                            extensions: [],
-                            operations: ops
-                        },wifs,(err,result_bc) => {
-                            if (err) {
-                                reject(err);
-                            } else {
+                        javalon.sendRawTransaction(newTx, function(err, res) {
+                            if (!err) {
                                 let sql = "UPDATE message SET voted = 1, vote_weight = ? WHERE author = ? and permlink = ?";
                                 database.query(sql, [weight, message.author, message.permlink], (err, result) => {
-                                    console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink)
-                                    resolve(result_bc);
+                                    console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink);
+                                    resolve({});
                                 })
                             }
                         })
+
+                        javalon.getContent(message.author, message.permlink, function(err, res) {
+                            if (res.json && res.json.refs) {
+                                for (let i = 0; i < res.json.refs.length; i++) {
+                                    var ref = res.json.refs[i].split('/')
+                                    if (ref[0] == 'steem') {
+                                        // voting on steem !
+
+                                        let ops = [
+                                            ['vote',{
+                                                voter: config.steem.account,
+                                                author: ref[0], //author
+                                                permlink: ref[1], //permlink
+                                                weight: weight
+                                            }]
+                                        ]
+                                        
+                                        var wifs = [config.steem.wif]
+                                        
+                                        if (weight >= config.resteem.threshold) {
+                                            // Resteem post if voting weight is high enough
+                                            ops.push(['custom_json',{
+                                                required_auths: [],
+                                                required_posting_auths: [config.resteem.account],
+                                                id: 'follow',
+                                                json: JSON.stringify(['reblog',{
+                                                    account: config.resteem.account,
+                                                    author: ref[0],
+                                                    permlink: ref[1]
+                                                }])
+                                            }])
+                                        
+                                            if (config.resteem.wif !== config.steem.wif)
+                                                wifs.push(config.resteem.wif)
+                                        }
+                                        
+                                        steem.broadcast.send({
+                                            extensions: [],
+                                            operations: ops
+                                        },wifs,(err,result_bc) => {
+                                            if (err) {
+                                                reject(err);
+                                            }
+                                        })
+
+                                        // making sure its only spending one vote :)
+                                        break;
+                                    }
+                                }
+                            }
+                        })
                     }
-
-
                 })
             });
-
         })
     },
     database

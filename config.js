@@ -1,6 +1,6 @@
 let config = {
     discord: {
-        token: "NDk0NDk2Nzc2NzIwNjEzMzg5.DvKJow.TSdurjWfUe0YqxOKqzfRdR0lAT4",
+        token: "",
         curation: {
             channel: "522337378329952256", // the channel where the curation takes place
             guild: "418646135725359104", // the guild where the curation takes place
@@ -68,6 +68,11 @@ let config = {
         "girlygamer"
     ],
     status_command_enabled: true,
+    avalon: {
+        account: 'onelovecuration',
+        wif: '',
+        vtMultiplier: 10
+    },
     database: {
         host: "localhost",
         user: "root",
