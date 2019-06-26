@@ -150,6 +150,8 @@ function handleLink(msg) {
                             var topTags = []
                             for (const key in result.tags)
                                 topTags.push(key)
+                            if (topTags.length == 0)
+                                topTags.push('No tags yet')
                             video.setTitle(json.title.substr(0, 1024))
                                 .setAuthor("@" + result.author, null, "https://d.tube/#!/c/" + result.link)
                                 .setThumbnail(json.thumbnailUrl)
