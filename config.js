@@ -43,7 +43,10 @@ let config = {
         "toddmck",
         "techcoderx",
         "captainbob",
-        "alphasteem"
+        "alphasteem",
+        "zainenn",
+        "priyanarc",
+        "deepsouthpiddlin"
     ],
     autovoteList: [
         "mvd",
@@ -58,7 +61,8 @@ let config = {
         "vaultec",
         "deepsouthpiddlin",
         "priyanarc",
-        "pixiepost"
+        "pixiepost",
+        "gaborockstar"
     ],
     blacklistedUsers: [
         "muhammadrizki96",
