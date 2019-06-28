@@ -143,7 +143,7 @@ function handleLink(msg) {
                         let json = result.json
                         let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.ts)));
                         if (json.providerName != 'IPFS') {
-                            return msg.channel.send('Video must be uploaded to IPFS for curation.')
+                            return msg.channel.send('Video must be an IPFS upload for curation.')
                         } else if (posted_ago > 2880) {
                             msg.channel.send("This video is too old for curation through oneloved.tube");
                         } else {
@@ -170,17 +170,13 @@ function handleLink(msg) {
                                                     let msg = await helper.database.getMessage(result.author, result.link);
                                                     embed.react(config.discord.curation.other_emojis.check);
                                                     video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
+                                                    video.addField("VT Spent",msg.vt_spent,true)
                                                     embed.edit({embed: video})
                                                 }).catch(error => {
-                                                    let errmsg = "An error occured while voting. Please check the logs!";
-                                                    try {
-                                                        errmsg = error.cause.data.stack[0].format.split(":")[1]
-                                                    } catch (e) {
-
-                                                    }
+                                                    let errmsg = "An error occured while voting. Please check the logs!"
                                                     video.addField("ERROR", errmsg);
                                                     embed.edit({embed: video});
-                                                    console.error('Failed to vote!',);
+                                                    console.error('Failed to vote! Error: ' + error);
                                                     embed.react(config.discord.curation.other_emojis.cross);
                                                 })
                                             })
@@ -313,7 +309,7 @@ client.on('message', msg => {
                 if (video !== undefined) {
                     const feedback = parts.slice(1).join(" ");
 
-                    let authorInformation = video.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.network/v/','').split('/');
+                    let authorInformation = video.replace('/#!', '').replace('https://d.tube/v/', '').split('/');
                     helper.database.feedBackExist(authorInformation[0], authorInformation[1]).then(exist => {
                         if (exist.length !== 0) {
                             console.log(exist[0].discord)
@@ -322,7 +318,7 @@ client.on('message', msg => {
                             video.setFooter("Powered by oneloved.tube Curation")
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
-                                .addField("View Video", "[Watch Video](https://dtube.network/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
+                                .addField("View Video", "[Watch Video](https://d.tube/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
                                 .setDescription("This video already received feedback from <@" + user.user.id + '>')
                                 .addField("Feedback", exist[0].message, true)
                                 .setColor("LUMINOUS_VIVID_PINK");
@@ -336,7 +332,7 @@ client.on('message', msg => {
                                 video.setFooter("Powered by oneloved.tube Curation")
                                     .setTimestamp()
                                     .setTitle("Feedback for: @" + json.video.info.author + '/' + json.video.info.permlink)
-                                    .setAuthor("@" + json.video.info.author, 'https://login.oracle-d.com/' + json.video.info.author + '.jpg', "https://dtube.network/#!/c/" + json.video.info.author)
+                                    .setAuthor("@" + json.video.info.author, 'https://login.oracle-d.com/' + json.video.info.author + '.jpg', "https://d.tube/#!/c/" + json.video.info.author)
                                     .setThumbnail('https://cloudflare-ipfs.com/ipfs/' + json.video.info.snaphash)
                                     .setDescription("[Watch Video](" + link + ")")
                                     .addField("Tags", json.tags.join(', '))
@@ -374,7 +370,7 @@ client.on('message', msg => {
             } else if (parts.length === 1) {
                 const video = helper.DTubeLink(parts[0].trim());
                 if (video !== undefined) {
-                    let authorInformation = video.replace('/#!', '').replace('https://dtube.network/v/', '').replace('https://d.tube/v/','').split('/');
+                    let authorInformation = video.replace('/#!', '').replace('https://d.tube/v/','').split('/');
                     helper.database.feedBackExist(authorInformation[0], authorInformation[1]).then(exist => {
                         if (exist.length === 1) {
                             console.log(exist[0].discord)
@@ -383,13 +379,13 @@ client.on('message', msg => {
                             video.setFooter("Powered by oneloved.tube Curation")
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
-                                .addField("View Video", "[Watch Video](https://dtube.network/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
+                                .addField("View Video", "[Watch Video](https://d.tube/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
                                 .setDescription("This video already received feedback from <@" + user.user.id + '>')
                                 .addField("Feedback", exist[0].message, true)
                                 .setColor("LUMINOUS_VIVID_PINK");
                             msg.channel.send(video);
                         } else {
-                            const emote = client.emojis.find(emoji => emoji.name === "ONELOVE");
+                            const emote = client.emojis.find(emoji => emoji.name === "onelovenew");
                             msg.reply(`This video has not received any feedback. ${emote}`)
                         }
                     });

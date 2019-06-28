@@ -235,6 +235,13 @@ function getVoteValue(weight,voter,completion) {
     })
 }
 
+function getAvalonVT(account,cb) {
+    javalon.getAccount(account,(err,res) => {
+        if (err) return cb(err)
+        cb(null,javalon.votingPower(res))
+    })
+}
+
 module.exports = {
     DTubeLink: (str) => {
         let words = str.split(' ')
@@ -287,12 +294,22 @@ module.exports = {
                         console.log('voting', message.author + '/' + message.permlink, weight);
 
                         // voting on avalon
+                        let avalonVTPromise = new Promise((resolve,reject) => {
+                            getAvalonVT(config.avalon.account,(err,vt) => {
+                                if (err) return reject(err)
+                                resolve(vt)
+                            })
+                        })
+
+                        let currentAvalonVT = await avalonVTPromise
+                        let vtToSpend = Math.floor((weight / 10000) * 0.02 * currentAvalonVT)
+
                         var newTx = {
                             type: javalon.TransactionType.VOTE,
                             data: {
                                 author: message.author,
                                 link: message.permlink,
-                                vt: weight*config.avalon.vtMultiplier,
+                                vt: vtToSpend,
                                 tag: ''
                             }
                         }
@@ -301,15 +318,18 @@ module.exports = {
 
                         javalon.sendRawTransaction(newTx, function(err, res) {
                             if (!err) {
-                                let sql = "UPDATE message SET voted = 1, vote_weight = ? WHERE author = ? and permlink = ?";
-                                database.query(sql, [weight, message.author, message.permlink], (err, result) => {
+                                let sql = "UPDATE message SET voted = 1, vote_weight = ?, vt_spent = ? WHERE author = ? and permlink = ?";
+                                database.query(sql, [weight, vtToSpend, message.author, message.permlink], (err, result) => {
                                     console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink);
                                     resolve({});
                                 })
+                            } else {
+                                return reject('Avalon vote error:')
                             }
                         })
 
                         javalon.getContent(message.author, message.permlink, function(err, res) {
+                            if (err) return reject(err)
                             if (res.json && res.json.refs) {
                                 for (let i = 0; i < res.json.refs.length; i++) {
                                     var ref = res.json.refs[i].split('/')
@@ -319,8 +339,8 @@ module.exports = {
                                         let ops = [
                                             ['vote',{
                                                 voter: config.steem.account,
-                                                author: ref[0], //author
-                                                permlink: ref[1], //permlink
+                                                author: ref[1], //author
+                                                permlink: ref[2], //permlink
                                                 weight: weight
                                             }]
                                         ]
@@ -335,8 +355,8 @@ module.exports = {
                                                 id: 'follow',
                                                 json: JSON.stringify(['reblog',{
                                                     account: config.resteem.account,
-                                                    author: ref[0],
-                                                    permlink: ref[1]
+                                                    author: ref[1],
+                                                    permlink: ref[2]
                                                 }])
                                             }])
                                         
@@ -349,7 +369,7 @@ module.exports = {
                                             operations: ops
                                         },wifs,(err,result_bc) => {
                                             if (err) {
-                                                reject(err);
+                                                reject("Steem error: " + err);
                                             }
                                         })
 

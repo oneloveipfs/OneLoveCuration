@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `message` (
   `heart` int(11) NOT NULL DEFAULT '0',
   `voted` int(11) NOT NULL DEFAULT '0',
   `vote_weight` int(11) DEFAULT '2000',
+  `vt_spent` int(11) DEFAULT 0,
   `author` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `permlink` varchar(280) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `posted` datetime DEFAULT NULL,
