@@ -170,7 +170,7 @@ function handleLink(msg) {
                                                     let msg = await helper.database.getMessage(result.author, result.link);
                                                     embed.react(config.discord.curation.other_emojis.check);
                                                     video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
-                                                    video.addField("VT Spent",msg.vt_spent,true)
+                                                    video.addField("VP Spent",msg.vp_spent,true)
                                                     embed.edit({embed: video})
                                                 }).catch(error => {
                                                     let errmsg = "An error occured while voting. Please check the logs!"
@@ -392,31 +392,42 @@ client.on('message', msg => {
                 }
             }
         } else if (msg.content == '!mana') {
-            helper.getVotingMana([config.mainAccount],(err,mana) => {
-                if (err) {
-                    msg.channel.send('An error occured. Please check the logs!')
-                    return
+            asyncjs.parallel({
+                mana: (cb) => {
+                    helper.getVotingMana([config.mainAccount],(err,mana) => {
+                        if (err) return cb(err)
+                        cb(null,mana)
+                    })
+                },
+                vp: (cb) => {
+                    helper.getAvalonVP(config.avalon.account,(err,vp) => {
+                        if (err) return cb(err)
+                        cb(null,vp)
+                    })
                 }
+            },(errors,manas) => {
+                if (errors) return msg.channel.send('An error occured. Please check the logs!')
+
                 var active = 'Active'
                 // Decide whethher if curation is active
-                if (mana < config.voting_threshold) {
+                if (manas.mana < config.voting_threshold) {
                     active = 'Inactive'
                 }
 
-                if (mana < config.voting_threshold) {
-                    active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(mana,config.voting_threshold)
+                if (manas.mana < config.voting_threshold) {
+                    active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(manas.mana,config.voting_threshold)
                 }
 
-                if (mana != 100) {
+                if (manas.mana != 100) {
                     // Calculate full recharge time
-                    active += '\nTime for a full recharge: ' + helper.getRechargeTime(mana,100)
+                    active += '\nTime for a full recharge: ' + helper.getRechargeTime(manas.mana,100)
                 } else {
                     // Mana is fully charged
                     active += '\nMana is fully charged.'
                 }
 
                 var embed = new Discord.RichEmbed();
-                embed.addField('Current voting mana for @' + config.mainAccount + ': ' + mana + '%','Curation status: ' + active)
+                embed.addField('Current voting mana for @' + config.mainAccount + ': ' + manas.mana + '%','Avalon VP available: ' + manas.vp + '\nCuration status: ' + active)
                 msg.channel.send(embed)
             })
         } else if (helper.DTubeLink(msg.content)) {

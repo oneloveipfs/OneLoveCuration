@@ -75,7 +75,8 @@ let config = {
     avalon: {
         account: 'onelovecuration',
         wif: '',
-        vtMultiplier: 10
+        vpMultiplier: 2,
+        tag: ''
     },
     database: {
         host: "localhost",

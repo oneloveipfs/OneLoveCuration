@@ -235,7 +235,7 @@ function getVoteValue(weight,voter,completion) {
     })
 }
 
-function getAvalonVT(account,cb) {
+function getAvalonVP(account,cb) {
     javalon.getAccount(account,(err,res) => {
         if (err) return cb(err)
         cb(null,javalon.votingPower(res))
@@ -260,6 +260,7 @@ module.exports = {
     },
     getVotingMana,
     getVoteValue,
+    getAvalonVP,
     getRechargeTime: (currentMana, manaToGetRecharged) => {
         // Calculate recharge time to threshold mana
         var rechargeTimeMins = (manaToGetRecharged - currentMana) / (5/6)
@@ -294,23 +295,26 @@ module.exports = {
                         console.log('voting', message.author + '/' + message.permlink, weight);
 
                         // voting on avalon
-                        let avalonVTPromise = new Promise((resolve,reject) => {
-                            getAvalonVT(config.avalon.account,(err,vt) => {
+                        let avalonVPPromise = new Promise((resolve,reject) => {
+                            getAvalonVP(config.avalon.account,(err,vp) => {
                                 if (err) return reject(err)
-                                resolve(vt)
+                                resolve(vp)
                             })
                         })
 
-                        let currentAvalonVT = await avalonVTPromise
-                        let vtToSpend = Math.floor((weight / 10000) * 0.02 * currentAvalonVT)
+                        let currentAvalonVP = await avalonVPPromise
+                        let vpToSpend = Math.floor((weight / 10000) * (config.avalon.vpMultiplier / 100) * currentAvalonVP)
+
+                        // VP spent must be at least 1
+                        if (vpToSpend < 1) vpToSpend = 1
 
                         var newTx = {
                             type: javalon.TransactionType.VOTE,
                             data: {
                                 author: message.author,
                                 link: message.permlink,
-                                vt: vtToSpend,
-                                tag: ''
+                                vp: vpToSpend,
+                                tag: config.avalon.tag
                             }
                         }
                         
@@ -318,10 +322,10 @@ module.exports = {
 
                         javalon.sendRawTransaction(newTx, function(err, res) {
                             if (!err) {
-                                let sql = "UPDATE message SET voted = 1, vote_weight = ?, vt_spent = ? WHERE author = ? and permlink = ?";
-                                database.query(sql, [weight, vtToSpend, message.author, message.permlink], (err, result) => {
+                                let sql = "UPDATE message SET voted = 1, vote_weight = ?, vp_spent = ? WHERE author = ? and permlink = ?";
+                                database.query(sql, [weight, vpToSpend, message.author, message.permlink], (err, result) => {
                                     console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink);
-                                    resolve({});
+                                    resolve(res);
                                 })
                             } else {
                                 return reject('Avalon vote error:')
