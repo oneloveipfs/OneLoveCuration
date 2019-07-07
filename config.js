@@ -76,6 +76,7 @@ let config = {
         account: 'onelovecuration',
         wif: '',
         vpMultiplier: 2,
+        vpToSpendForFeedback: 20,
         tag: ''
     },
     database: {

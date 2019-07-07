@@ -242,6 +242,16 @@ function getAvalonVP(account,cb) {
     })
 }
 
+function generatePermlink() {
+    let permlink = ""
+    let possible = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+    for (let i = 0; i < 8; i++) {
+        permlink += possible.charAt(Math.floor(Math.random() * possible.length))
+    }
+    return permlink
+}
+
 module.exports = {
     DTubeLink: (str) => {
         let words = str.split(' ')
@@ -261,6 +271,7 @@ module.exports = {
     getVotingMana,
     getVoteValue,
     getAvalonVP,
+    generatePermlink,
     getRechargeTime: (currentMana, manaToGetRecharged) => {
         // Calculate recharge time to threshold mana
         var rechargeTimeMins = (manaToGetRecharged - currentMana) / (5/6)
@@ -325,7 +336,7 @@ module.exports = {
                                 let sql = "UPDATE message SET voted = 1, vote_weight = ?, vp_spent = ? WHERE author = ? and permlink = ?";
                                 database.query(sql, [weight, vpToSpend, message.author, message.permlink], (err, result) => {
                                     console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink);
-                                    resolve(res);
+                                    resolve(result);
                                 })
                             } else {
                                 return reject('Avalon vote error:')
