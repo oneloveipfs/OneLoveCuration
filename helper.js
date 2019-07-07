@@ -324,7 +324,7 @@ module.exports = {
                             data: {
                                 author: message.author,
                                 link: message.permlink,
-                                vp: vpToSpend,
+                                vt: vpToSpend,
                                 tag: config.avalon.tag
                             }
                         }

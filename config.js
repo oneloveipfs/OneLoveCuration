@@ -50,19 +50,14 @@ let config = {
     ],
     autovoteList: [
         "mvd",
-        "tanbay",
-        "theycallmedan",
         "d00k13",
-        "steemersayu907",
         "tibfox",
-        "vladivostok",
-        "mariannewest",
-        "freewritehouse",
         "vaultec",
         "deepsouthpiddlin",
         "priyanarc",
-        "pixiepost",
-        "gaborockstar"
+        "gaborockstar",
+        "kenmelendez",
+        "fedesox"
     ],
     blacklistedUsers: [
         "muhammadrizki96",
