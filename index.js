@@ -356,9 +356,10 @@ client.on('message', msg => {
                                                 app: 'onelovedtube/feedback',
                                                 title: '',
                                                 description: feedback,
-                                                vt: config.avalon.vpToSpendForFeedback,
-                                                tag: config.avalon.tag
-                                            }
+                                                refs: []
+                                            },
+                                            vt: config.avalon.vpToSpendForFeedback,
+                                            tag: config.avalon.tag,
                                         }
                                     }
 
@@ -367,7 +368,7 @@ client.on('message', msg => {
                                     if (result.json.refs) for (let i = 0; i < result.json.refs.length; i++) {
                                         let ref = result.json.refs[i].split('/')
                                         if (ref[0] === 'steem') {
-                                            avalonCommentTx.data.refs = ['steem/' + ref[1] + commentLink]
+                                            avalonCommentTx.data.json.refs = ['steem/' + ref[1] + commentLink]
                                             steempa = ref[1]
                                             steempp = ref[2]
                                             break
