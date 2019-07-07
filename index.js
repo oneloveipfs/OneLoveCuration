@@ -338,7 +338,7 @@ client.on('message', msg => {
                                     .setAuthor("@" + result.author, 'https://image.d.tube/u/' + result.author + '/avatar', "https://d.tube/#!/c/" + result.author)
                                     .setThumbnail(result.json.thumbnailUrl)
                                     .setDescription("[Watch Video](" + link + ")")
-                                    .addField("Tags", topTags.json(', '), true)
+                                    .addField("Tags", topTags.join(', '), true)
                                     .addField("Uploaded", posted_ago + ' minutes ago', true)
                                     .setColor("DARK_GOLD")
                                 
@@ -365,7 +365,7 @@ client.on('message', msg => {
                                     // Steem comment
                                     let steempa, steempp
                                     if (result.json.refs) for (let i = 0; i < result.json.refs.length; i++) {
-                                        let ref = res.json.refs[i].split('/')
+                                        let ref = result.json.refs[i].split('/')
                                         if (ref[0] === 'steem') {
                                             avalonCommentTx.data.refs = ['steem/' + ref[1] + commentLink]
                                             steempa = ref[1]
