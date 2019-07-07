@@ -1,15 +1,27 @@
+var token = process.env.token || ''
+var wif = process.env.wif || '5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg'
+var wifAvalon = process.env.wif_avalon || ''
+var account = process.env.account || 'guest123'
+var db_addr = process.env.db_addr || 'localhost'
+var db_user = process.env.db_user || 'root'
+var db_pass = process.env.db_pass || ''
+var db_database = process.env.db_database || 'dtube'
+var channel = process.env.channel || ''
+var guild = process.env.guild || '347020217966395393'
+
+
 let config = {
     discord: {
-        token: "",
+        token: token,
         curation: {
-            channel: "522337378329952256", // the channel where the curation takes place
-            guild: "418646135725359104", // the guild where the curation takes place
-            role: "473760034023538689", // Discord role ID for the CurationTeam (in onelovedtube server) role
+            channel: channel, // the channel where the curation takes place
+            guild: guild, // the guild where the curation takes place
             curation_emojis: { // this emojis are used by the bot to calculate the vote
                 up: "👍",
                 down: "👎",
                 one_hundred: "💯",
                 game_die: "🎲",
+                unicorn: "🦄",
                 heart: '❤'
             },
             other_emojis: {
@@ -25,113 +37,86 @@ let config = {
         }
     },
     steem: {
-        wif: "",
-        account: "onelovecuration"
+        wif: wif,
+        account: account
     },
-    resteem: {
-        wif: "",
-        account: "onelovedtube",
-        threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
-    },
-    mainAccount: "onelovedtube", // default account for obtaining voting mana
-    voting_threshold: 90, // minimum voting mana required to curate videos
-    team: [
-        "d00k13",
-        "graylan",
-        "gray00",
-        "dnews",
-        "toddmck",
-        "techcoderx",
-        "captainbob",
-        "alphasteem",
-        "zainenn",
-        "priyanarc",
-        "deepsouthpiddlin"
-    ],
-    autovoteList: [
-        "mvd",
-        "tanbay",
-        "theycallmedan",
-        "d00k13",
-        "steemersayu907",
-        "tibfox",
-        "vladivostok",
-        "mariannewest",
-        "freewritehouse",
-        "vaultec",
-        "deepsouthpiddlin",
-        "priyanarc",
-        "pixiepost",
-        "gaborockstar"
-    ],
-    blacklistedUsers: [
-        "muhammadrizki96",
-        "jacksonchakma",
-        "kawaiicrush",
-        "steemnurse",
-        "girlygamer"
-    ],
-    status_command_enabled: true,
     avalon: {
-        account: 'onelovecuration',
-        wif: '',
-        vpMultiplier: 2,
-        vpToSpendForFeedback: 20,
-        tag: ''
+        account: account,
+        wif: wifAvalon,
+        vtMultiplier: 10
     },
     database: {
-        host: "localhost",
-        user: "root",
-        password: "Wjf9qWF2VaKN",
-        database: "dtube",
-	    charset: "utf8mb4"
+        host: db_addr,
+        user: db_user,
+        password: db_pass,
+        database: db_database
     },
     mod_settings: {
         enabled: true,
-        group_name: "get-help",
+        group_name: "mods",
         faq: {
-            "error404": [ // the key. Usage like !faq error
-                "I'm getting an ERROR 404 while pinning videos. What is wrong?", // the displayed question
-                "Either the resolution you're trying to pin is not available as a playback option on DTube, or the video file doesn't exists on DTube's servers. Perhaps try pinning another resolution of the video?" // and the displayed answer
+            "error": [ // the key. Usage like !faq error
+                "I'm getting an ERROR when trying to upload a video, what do?", // the displayed question
+                "Log out of DTube, Clear your Cookies/Cache in your web browser, Log back into DTube with your Steemit \"Posting Key\"" // and the displayed answer
             ],
-            "error404_uploader": [
-                "I'm getting a 404 error when I am trying to run pinning commands on videos uploaded through 3rd party uploaders. What is happening?",
-                "Our pinning bot downloads videos from video.dtube.top gateway only, which is not connected to the IPFS network. If you need those videos to be pinned, please contact an admin for assistance."
+            "error2": [
+                "I'm getting another strange ERROR, What could be wrong?",
+                "Try making sure you don't have the hashtag character in your tags (#)"
             ],
-            "error504": [
-                "I'm getting another ERROR but this time it's code 504!",
-                "504 errors are gateway timeout errors. Right now the bot pulls videos from video.dtube.top gateway, which means if their servers are down the pinning commands will not work. Try again later."
+            "video_spec": [
+                "What is the best video spec to use for DTube?",
+                "We suggest 720p (.mp4) at 30fps."
             ],
-            "permissions": [
-                "The bot is telling me that I have no permissions to pin videos.",
-                "OneLoveDTube IPFS hosting is a paid service for $10 USD/month. If you have paid for this month and error still persists, please contact an admin for assistance. If using community-member provided IPFS bots, contact the bot owner for help."
+            "video_formats": [
+                "Can I use other video formats?",
+                "We suggest you use only .mp4 at the moment. If you need to transcode your videos from one spec to other, Google \"Handbrake Encoder\""
             ],
-            "supported_res": [
-                "What resolutions are supported on the IPFS bots?",
-                "We support a wide range of resolutions from 240p up to 1080p. Source pinning is supported, which means it's technically possible to pin 4K videos. While our servers are able to handle it, it may take longer time for the video to be fetched and pinned."
+            "video_delete": [
+                "How do I delete a video?",
+                "You cannot delete the info off the blockchain but you can erase your hash codes so your video will become unviewable. Edit>Advance>Then delete the hash codes. You might want to delete your Steemit post information also."
             ],
-            "hosting_package": [
-                "How much do I have to pay for your hosting services?",
-                "The price is currently $10 USD/month for access to OneLoveDTube IPFS pinning commands and access to uploader."
+            "4k": [
+                "Can I upload in 4k?",
+                "Sorry 4K is not supported at the moment."
             ],
-            "onelovevote": [
-                "When will I get an upvote from you?",
-                "Upvotes are not guaranteed to anyone. We suggest posting quality videos to DTube on a regular basis. This will better your chance at our curators seeing them. If we miss your video, it does NOT reflect on you as an artist and suggest becoming a daily video contributor to the platform."
+            "snap_size": [
+                "What is the best Snap image size?",
+                "We suggest 1280 x 720 at 72dpi (.jpg) or (.png)"
+            ],
+            "snap_replace": [
+                "I need to replace my \"Snap\" (Thumbnail). How do I do this?",
+                "Please swap out the old \"Snap Hash\" with a the new one. In the \"EDIT>ADVANCE\" settings. Please watch this video: (https://d.tube/#!/v/reseller/a3khbeck)"
+            ],
+            "tags": [
+                "How many tags can I use?",
+                "Please use up to (4) Four. The 5th will default to #dtube "
+            ],
+            "bot_vote": [
+                "When will I get a DTube upvote?",
+                "DTube upvotes are not guaranteed to anyone. We suggest posting quality videos to DTube on a regular basis. This will better your chance at our curators seeing them. If we miss your video, it does NOT reflect on you as an artist and suggest becoming a daily video contributor to the platform."
+            ],
+            "beneficiary": [
+                "Does DTube take 25% of our Author Rewards?",
+                "no, DTube currently takes 10%, previously DTube took more and used it to directly reward curators, this program has now ended"
+            ],
+            "playback_error": [
+                "Why can't I view my newly uploaded video?",
+                "The Decentralized IPFS Nodes are catching up and might take up to 15 minutes to view after upload."
             ],
             "playback_error_old": [
-                "Why wont my older videos that I pinned to your servers play?",
-                "If you are a paying user since the day you started to pin your videos to our servers, it's likely that your video is not being viewed frequently, which means that the video may take some time to get cached to the IPFS gateways for it to be loaded."
+                "Why wont my older videos play?",
+                "We delete some older videos off the server to save on server space."
             ],
             "password": [
                 "I lost my Password, Can you Help?",
                 "Unfortunately. No we cant because we didnt create your account and due to how the blockchain works you can not just get an email with a new password. If your account was hacked, created at steemit.com and you still have your old owner key go here to recover your account: https://steemit.com/recover_account_step_1"
             ],
-            "uploader": [
-                "Where can I find answers to my questions regarding the uploader?",
-                "The uploader FAQ can be found [here](https://github.com/techcoderx/ipfsVideoUploader/blob/master/docs/FAQ.md)."
+            "video_quality": [
+                "My Video is only showing \"Source\", is there something wrong?",
+                "If your video is over 20 Minutes long it will only show \"Source\""
             ]
         }
     }
-}
+};
 
-module.exports = config
+module.exports = config;
