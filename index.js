@@ -142,6 +142,10 @@ function handleLink(msg) {
                     try {
                         let json = result.json
                         let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.ts)));
+                        let waitTime = config.discord.curation.timeout_minutes
+                        if (posted_ago < config.discord.curation.min_age) {
+                            waitTime = config.discord.curation.min_age - posted_ago
+                        }
                         if (json.providerName != 'IPFS') {
                             return msg.channel.send('Video must be an IPFS upload for curation.')
                         } else if (posted_ago > 2880) {
@@ -180,7 +184,7 @@ function handleLink(msg) {
                                                     embed.react(config.discord.curation.other_emojis.cross);
                                                 })
                                             })
-                                        }, 60 * 1000 * config.discord.curation.timeout_minutes)
+                                        }, 60 * 1000 * waitTime)
                                     });
                                     helper.database.addMessage(embed.id, result.author, result.link)
                                 }).catch(error => {

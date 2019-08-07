@@ -21,7 +21,8 @@ let config = {
                 min: 100,
                 max: 3500
             },
-            timeout_minutes: 15 // wait x minutes after posting until the bot votes
+            min_age: 15, // minimum post age for voting
+            timeout_minutes: 1 // wait x minutes after posting until the bot votes
         }
     },
     steem: {
