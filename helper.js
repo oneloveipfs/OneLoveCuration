@@ -155,7 +155,7 @@ function calculateVote(post,author) {
     if (post.one_hundred >= 3)
         return 10000
     if (post.one_hundred == 2)
-        return 7700
+        return 8000
 
     let weight = 0
 
@@ -163,9 +163,9 @@ function calculateVote(post,author) {
     for (let i = 0; i < post.game_die; i++)
         weight += 100 * Math.floor(Math.random()*(12-2+1)+2);
     for (let i = 0; i < post.heart; i++)
-        weight += 1700;
+        weight += 3500;
     for (let i = 0; i < post.up; i++)
-        weight += 1000;
+        weight += 2000;
     for (let i = 0; i < post.down; i++)
         weight -= 500;
 
