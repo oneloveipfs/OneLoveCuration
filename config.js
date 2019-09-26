@@ -21,7 +21,7 @@ let config = {
                 min: 100,
                 max: 3500
             },
-            min_age: 15, // minimum post age for voting
+            min_age: 5, // minimum post age for voting
             timeout_minutes: 1 // wait x minutes after posting until the bot votes
         }
     },
@@ -40,14 +40,12 @@ let config = {
         "d00k13",
         "graylan",
         "gray00",
-        "dnews",
         "toddmck",
         "techcoderx",
-        "captainbob",
-        "alphasteem",
         "zainenn",
         "priyanarc",
-        "deepsouthpiddlin"
+        "deepsouthpiddlin",
+	"vaultec"
     ],
     autovoteList: [
         "mvd",
@@ -56,9 +54,7 @@ let config = {
         "vaultec",
         "deepsouthpiddlin",
         "priyanarc",
-        "gaborockstar",
-        "kenmelendez",
-        "fedesox"
+        "gaborockstar"
     ],
     blacklistedUsers: [
         "muhammadrizki96",
