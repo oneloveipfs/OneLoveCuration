@@ -225,7 +225,7 @@ function getVoteValue(weight,voter,completion) {
         let secondsago = (new Date - new Date(results.account[0].last_vote_time + 'Z')) / 1000
         var mana = results.account[0].voting_power + (10000 * secondsago / 432000)
         mana = Math.min(mana/100,100).toFixed(2)
-        let feed = Number(results.priceFeed.base.slice(0,-4))
+        let feed = Number(results.priceFeed.base.slice(0,-4)) / Number(results.priceFeed.quote.slice(0,-6))
         let total_vests = Number(results.account[0].vesting_shares.slice(0,-6)) - Number(results.account[0].delegated_vesting_shares.slice(0,-6)) + Number(results.account[0].received_vesting_shares.slice(0,-6))
         let final_vest = total_vests * 1e6
         let power = (mana * weight / 10000) / 50
