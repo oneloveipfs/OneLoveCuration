@@ -153,9 +153,9 @@ database.addFeedback = async (from, msg, author, permlink) => {
 
 function calculateVote(post,efficiency) {
     if (post.one_hundred >= 3)
-        return 10000
+        return 10000 * efficiency
     if (post.one_hundred == 2)
-        return 8000
+        return 8000 * efficiency
 
     let weight = 0
 
