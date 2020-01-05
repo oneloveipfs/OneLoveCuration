@@ -151,7 +151,7 @@ database.addFeedback = async (from, msg, author, permlink) => {
     });
 };
 
-function calculateVote(post,author) {
+function calculateVote(post,efficiency) {
     if (post.one_hundred >= 3)
         return 10000
     if (post.one_hundred == 2)
@@ -171,10 +171,6 @@ function calculateVote(post,author) {
 
     // if there is a disagrement, no vote
     if (weight > 0 && post.down > 0)
-        return 0
-
-    // Blacklisted users are not eligible for upvotes
-    if (config.blacklistedUsers.includes(author) && weight > 0)
         return 0
     
     // maximum voting weight possible is 100%
@@ -290,7 +286,7 @@ module.exports = {
         }
         return rechargeTime
     },
-    vote: async (message, client, author) => {
+    vote: async (message, client, efficiency) => {
         return new Promise((resolve, reject) => {
             client
                 .guilds
@@ -299,7 +295,7 @@ module.exports = {
                 .get(config.discord.curation.channel)
                 .fetchMessage(message.discord_id).then(post => {
                 database.updateReactions(post.id, countReaction(post)).then(async () => {
-                    let weight = calculateVote(message, author);
+                    let weight = calculateVote(message, efficiency);
                     if (weight === 0) {
                         reject('Weight=0')
                     } else {

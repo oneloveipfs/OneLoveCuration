@@ -12,7 +12,8 @@ Sentry.init({ dsn: 'https://f99fbe1e544b441c8ff7851df1267049@sentry.io/1430210' 
 const config = require('./config');
 const helper = require('./helper');
 
-steem.api.setOptions({url:'https://anyx.io'})
+steem.api.setOptions({url:'https://techcoderx.com'})
+javalon.init({ api: 'https://avalon.oneloved.tube' })
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -119,10 +120,11 @@ function handleLink(msg) {
     // Check if voting mana is above threshold
     steem.api.getAccounts([config.mainAccount],(err,res) => {
         if (err) {
+            console.log('Get @onelovedtube Steem account error',err)
             return msg.channel.send('An error occured. Please check the logs!')
         }
-        var secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
-        var mana = res[0].voting_power + (10000 * secondsago / 432000)
+        let secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
+        let mana = res[0].voting_power + (10000 * secondsago / 432000)
         mana = Math.min(mana/100,100).toFixed(2)
         if (mana < config.voting_threshold) {
             msg.channel.send('Our current voting mana is ' + mana + '% but our minimum threshold for curation is ' + config.voting_threshold + '%. Please wait for our mana to recharge and try again later.')
@@ -134,6 +136,7 @@ function handleLink(msg) {
                 .setTimestamp();
             let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').split('/')
             if (config.autovoteList.includes(authorInformation[0])) return msg.channel.send('Author is in our autovote list therefore cannot be manually curated.')
+            if (config.blacklistedUsers.includes(authorInformation[0])) return msg.channel.send('Author is in the curation blacklist.')
             javalon.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
                 if (err) {
                     msg.reply("Oops! An error occured. Please check the logs!");
@@ -143,12 +146,12 @@ function handleLink(msg) {
                         let json = result.json
                         let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.ts)));
                         let waitTime = config.discord.curation.timeout_minutes
+                        let efficiency = 1
                         if (posted_ago < config.discord.curation.min_age) {
                             waitTime = config.discord.curation.min_age - posted_ago
                         }
-                        if (json.providerName != 'IPFS') {
-                            return msg.channel.send('Video must be an IPFS upload for curation.')
-                        } else if (posted_ago > 2880) {
+                        if (json.providerName != 'IPFS') efficiency = 0.5
+                        if (posted_ago > 2880) {
                             msg.channel.send("This video is too old for curation through oneloved.tube");
                         } else {
                             var topTags = []
@@ -170,7 +173,7 @@ function handleLink(msg) {
                                         setTimeout(() => {
                                             clockReaction.remove();
                                             helper.database.getMessage(result.author, result.link).then(message => {
-                                                helper.vote(message, client).then(async (tx) => {
+                                                helper.vote(message, client, efficiency).then(async (tx) => {
                                                     let msg = await helper.database.getMessage(result.author, result.link);
                                                     embed.react(config.discord.curation.other_emojis.check);
                                                     video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);

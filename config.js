@@ -45,23 +45,26 @@ let config = {
         "zainenn",
         "priyanarc",
         "deepsouthpiddlin",
-	"vaultec"
+        "vaultec"
     ],
     autovoteList: [
         "mvd",
         "d00k13",
-        "tibfox",
         "vaultec",
         "deepsouthpiddlin",
         "priyanarc",
-        "gaborockstar"
+        "gaborockstar",
+        "kaerpediem",
+        "rem-steem"
     ],
     blacklistedUsers: [
         "muhammadrizki96",
         "jacksonchakma",
         "kawaiicrush",
         "steemnurse",
-        "girlygamer"
+        "girlygamer",
+        "dcooperation",
+        "clixmoney"
     ],
     status_command_enabled: true,
     avalon: {
