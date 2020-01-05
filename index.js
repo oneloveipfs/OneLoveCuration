@@ -228,7 +228,9 @@ client.on('message', msg => {
             days = 7
         }
 
-        msg.channel.send(buildCurationTable(data))
+        helper.database.getMessageSummary(days).then(data => {
+            msg.channel.send(buildCurationTable(data))
+        })
     }
 
     if (msg.content.startsWith("!status")) {
