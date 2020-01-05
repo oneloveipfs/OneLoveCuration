@@ -164,6 +164,8 @@ function calculateVote(post,efficiency) {
         weight += 100 * Math.floor(Math.random()*(12-2+1)+2);
     for (let i = 0; i < post.heart; i++)
         weight += 3500;
+    for (let i = 0; i < post.one_hundred; i++)
+        weight += 3500
     for (let i = 0; i < post.up; i++)
         weight += 2000;
     for (let i = 0; i < post.down; i++)
@@ -174,10 +176,12 @@ function calculateVote(post,efficiency) {
         return 0
     
     // maximum voting weight possible is 100%
-    if (weight > 10000) {
+    if (weight * efficiency > 10000) {
         return 10000   
-    } else {
+    } else if (weight < 0) {
         return weight
+    } else {
+        return weight * efficiency
     }
 }
 
