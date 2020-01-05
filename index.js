@@ -4,10 +4,10 @@ const steem = require("steem");
 const asyncjs = require('async')
 const javalon = require('javalon');
 const fetch = require("node-fetch");
-const ChartjsNode = require('chartjs-node');
-const chartNode = new ChartjsNode(720, 720 * .5);
-const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://f99fbe1e544b441c8ff7851df1267049@sentry.io/1430210' });
+// const ChartjsNode = require('chartjs-node');
+// const chartNode = new ChartjsNode(720, 720 * .5);
+// const Sentry = require('@sentry/node');
+// Sentry.init({ dsn: 'https://f99fbe1e544b441c8ff7851df1267049@sentry.io/1430210' });
 
 const config = require('./config');
 const helper = require('./helper');
@@ -34,9 +34,9 @@ client.on('ready', () => {
 function buildCurationTable(DB_RESULT) {
     DB_RESULT = DB_RESULT.reverse();
     let data = [
-        '```+--------+---------+',
-        '|Videos  |Date     |',
-        '+------------------+',
+        '```+--------+-----------+',
+        '|Videos  |Date       |',
+        '+--------------------+',
 
     ];
 
@@ -45,15 +45,17 @@ function buildCurationTable(DB_RESULT) {
             DB_RESULT[i].count +
             " ".repeat(8 - DB_RESULT[i].count.toString().length) + "|" +
             (new Date(DB_RESULT[i].posted)).toLocaleDateString("en-US") +
-            " ".repeat(9 - (new Date(DB_RESULT[i].posted)).toLocaleDateString("en-US").length ) +
+//            " ".repeat(9 - (new Date(DB_RESULT[i].posted)).toLocaleDateString("en-US").length ) +
+            " " +
             "|"
         );
     }
 
-    data.push('+--------+---------+```');
+    data.push('+--------+-----------+```');
     return data.join("\n");
 }
 
+/*
 function createChartOptions(DB_RESULT) {
     DB_RESULT = DB_RESULT.reverse();
     return {
@@ -94,6 +96,7 @@ function createChartOptions(DB_RESULT) {
         }
     }
 }
+*/
 
 function countCurators() {
     return client.guilds.get(config.discord.curation.guild).roles.get(config.discord.curation.role).members.size
@@ -216,8 +219,8 @@ client.on('message', msg => {
         return;
     }
 
-    if (msg.content.startsWith("!chart")) {
-        let days = parseInt(msg.content.replace("!chart", "").trim());
+    if (msg.content.startsWith("!table")) {
+        let days = parseInt(msg.content.replace("!table", "").trim());
         if (isNaN(days)) {
             days = 7
         }
@@ -225,21 +228,7 @@ client.on('message', msg => {
             days = 7
         }
 
-        helper.database.getMessageSummary(days).then(data => {
-            chartNode.drawChart(createChartOptions(data))
-                .then(() => {
-                    return chartNode.getImageBuffer('image/png');
-                })
-                .then(buffer => {
-                    return chartNode.getImageStream('image/png');
-                })
-                .then(streamResult => {
-                    return chartNode.writeImageToFile('image/png', './statistics.png');
-                })
-                .then(() => {
-                    msg.channel.send(buildCurationTable(data), {files: ["./statistics.png"]})
-                });
-        })
+        msg.channel.send(buildCurationTable(data))
     }
 
     if (msg.content.startsWith("!status")) {
@@ -539,12 +528,12 @@ client.on('error', (error) => console.log('Discord error: ' + error))
 client.login(config.discord.token);
 
 process.on('uncaughtException', function (error) {
-    Sentry.captureException(error);
+    console.log('uncaughtExeption',error)
     process.exit(1)
 });
 
 process.on('unhandledRejection', function (error, p) {
+    console.log('unhandledRejection',error)
     console.log(p);
-    Sentry.captureException(error);
     process.exit(1)
 });
