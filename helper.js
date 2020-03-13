@@ -339,7 +339,7 @@ module.exports = {
                                     resolve(result);
                                 })
                             } else {
-                                return reject('Avalon vote error:')
+                                return reject('Avalon vote error' + JSON.stringify(err))
                             }
                         })
 

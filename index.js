@@ -153,7 +153,8 @@ function handleLink(msg) {
                         if (posted_ago < config.discord.curation.min_age) {
                             waitTime = config.discord.curation.min_age - posted_ago
                         }
-                        if (json.providerName != 'IPFS') efficiency = 0.5
+                        let decentralizedProvs = ['IPFS','BTFS','Skynet']
+                        if (!decentralizedProvs.includes(json.providerName)) efficiency = 0.5
                         if (posted_ago > 2880) {
                             msg.channel.send("This video is too old for curation through oneloved.tube");
                         } else {
