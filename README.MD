@@ -9,8 +9,8 @@ To run this bot you need nodeJS and a MySQL database.
 
 ### Installation
 
-    git clone https://github.com/techcoderx/OneLoveCuration.git
-    cd OneLoveCuration
+    git clone https://github.com/oneloveipfs/onelovecuration.git
+    cd onelovecuration
     npm install
     
 To generate the charts you need to install some packages:
