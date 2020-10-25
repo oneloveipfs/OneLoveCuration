@@ -4,6 +4,7 @@ const steem = require('steem')
 const blurt = require('@blurtfoundation/blurtjs')
 const asyncjs = require('async')
 const javalon = require('javalon')
+const fetch = require('node-fetch')
 
 let database = require('mysql').createConnection(config.database);
 
@@ -152,10 +153,6 @@ database.addFeedback = async (from, msg, author, permlink) => {
     })
 }
 
-// function uppercasefirst(str) {
-//     return str.charAt(0).toUpperCase() + str.slice(1)
-// }
-
 const apis = {
     getAccount: (account,network) => {
         return new Promise((rs,rj) => apis.strToAPI(network).api.getAccounts([account],(e,r) => {
@@ -180,7 +177,7 @@ const apis = {
             let sp = await apis.strToAPI(network).api.getAccountsAsync([account])
             let props = await apis.strToAPI(network).api.getDynamicGlobalPropertiesAsync()
             sp = sp[0]
-            rs(apis.strToAPI(network).formatter.vestToSteem(parseFloat(sp.vesting_shares) + parseFloat(sp.received_vesting_shares) - parseFloat(sp.delegated_vesting_shares), props.total_vesting_shares, props['total_vesting_fund_'+network]))
+            rs(apis.strToAPI(network).formatter[network === 'hive' ? 'vestToHive' : 'vestToSteem'](parseFloat(sp.vesting_shares) + parseFloat(sp.received_vesting_shares) - parseFloat(sp.delegated_vesting_shares), props.total_vesting_shares, props['total_vesting_fund_'+network]))
         })
     },
     getVotingMana: (account,network) => {
@@ -251,6 +248,10 @@ const graphOps = {
     }
 }
 
+function uppercasefirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 function calculateVote(post,efficiency) {
     if (post.one_hundred >= 3)
         return 10000 * efficiency
@@ -296,23 +297,31 @@ function countReaction(message) {
     return reactions;
 }
 
-function getVoteValue(weight,voter,completion) {
+function getVoteValue(weight,voter,network,completion) {
     asyncjs.parallel({
         rewardPool: (cb) => {
-            steem.api.getRewardFund('post',(err,res) => cb(err,res))
+            apis.strToAPI(network).api.getRewardFund('post',(err,res) => cb(err,res))
         },
         account: (cb) => {
-            steem.api.getAccounts([voter],(err,res) => cb(err,res))
+            apis.strToAPI(network).api.getAccounts([voter],(err,res) => cb(err,res))
         },
         priceFeed: (cb) => {
-            steem.api.getCurrentMedianHistoryPrice((err,res) => cb(err,res))
+            if (network == 'blurt')
+                fetch('https://ionomy.com/api/v1/public/market-summary?market=btc-blurt').then(res => {return res.json()}).then(blurtPrice => {
+                    fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false').then(res => {return res.json()}).then(btcprice => {
+                        let blurtUsd = parseFloat(blurtPrice.data.price) * btcprice.market_data.current_price.usd
+                        return cb(null,{base: blurtUsd.toFixed(3) + ' BBD', quote: '1.000 BLURT'})
+                    })
+                })
+            else apis.strToAPI(network).api.getCurrentMedianHistoryPrice((err,res) => cb(err,res))
         }
     },(errors,results) => {
+        // TODO: Convergence linear curve
         if (errors) return completion(errors,null)
         let secondsago = (new Date - new Date(results.account[0].last_vote_time + 'Z')) / 1000
         var mana = results.account[0].voting_power + (10000 * secondsago / 432000)
         mana = Math.min(mana/100,100).toFixed(2)
-        let feed = Number(results.priceFeed.base.slice(0,-4)) / Number(results.priceFeed.quote.slice(0,-6))
+        let feed = Number(results.priceFeed.base.split(' ')[0]) / Number(results.priceFeed.quote.split(' ')[0])
         let total_vests = Number(results.account[0].vesting_shares.slice(0,-6)) - Number(results.account[0].delegated_vesting_shares.slice(0,-6)) + Number(results.account[0].received_vesting_shares.slice(0,-6))
         let final_vest = total_vests * 1e6
         let power = (mana * weight / 10000) / 50
@@ -377,6 +386,7 @@ module.exports = {
         if (mana < config.voting_threshold)
             result.steem = mana
     },
+    uppercasefirst,
     vote: async (message, client, efficiency) => {
         return new Promise(async (resolve, reject) => {
             let post = await client.guilds.cache.get(config.discord.curation.guild)

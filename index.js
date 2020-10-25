@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const hive = require('@hiveio/hive-js')
 const steem = require("steem");
+const blurt = require('@blurtfoundation/blurtjs')
 const asyncjs = require('async')
 const javalon = require('javalon');
 const fetch = require("node-fetch");
@@ -17,6 +18,7 @@ steem.api.setOptions({url: config.steem.api , useAppbaseApi: true})
 javalon.init({ api: config.avalon.api })
 hive.api.setOptions({url: config.hive.api, useAppbaseApi: true, rebranded_api: true})
 hive.broadcast.updateOperations()
+blurt.api.setOptions({ url: config.blurt.api })
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`)
@@ -159,30 +161,36 @@ client.on('message', async msg => {
         })
     }
 
-    if (msg.content.startsWith("!steem")) {
-        let user = msg.content.replace("!steem", "").trim();
+    if (msg.content.startsWith("!steem") || msg.content.startsWith("!hive") || msg.content.startsWith("!blurt")) {
+        let network = msg.content.split(' ')[0].substr(1)
+        let networkUCase = helper.uppercasefirst(network)
+        let user = msg.content.replace('!steem','').replace('!hive','').replace('!blurt','').trim()
+        console.log('lookup',network,networkUCase,user)
 
         if (steem.utils.validateAccountName(user) !== null)
             user = config.mainAccount
 
-        let res = await helper.apis.getAccount(user,'steem')
+        let res = await helper.apis.getAccount(user,network)
         if (res.length === 0)
-            return msg.reply(user + " seems not to be a valid Steem account");
+            return msg.reply(user + " seems not to be a valid " + networkUCase + " account");
         asyncjs.parallel({
             msgCount: (cb) => {
                 helper.database.countMessages().then(count => cb(null,count))
             },
             spCount: (cb) => {
-                helper.apis.getPower(user,'steem').then(sp => cb(null,sp))
+                helper.apis.getPower(user,network).then(sp => cb(null,sp))
             },
             mana: (cb) => {
-                helper.apis.getVotingMana(user,'steem').then(vp => cb(null,vp))
+                helper.apis.getVotingMana(user,network).then(vp => cb(null,vp))
             },
             voteValue: (cb) => {
-                helper.getVoteValue(10000,user,(err,vote_value) => cb(err,vote_value))
+                helper.getVoteValue(10000,user,network,(err,vote_value) => cb(err,vote_value))
             },
             blacklist: (cb) => {
-                getBlacklistEntries(user).then(blacklist => cb(null,blacklist))
+                if (network === 'hive')
+                    getBlacklistEntries(user).then(blacklist => cb(null,blacklist))
+                else
+                    cb(null,{entries: [], text: '', count: 0}) // TODO: Blacklists for more networks
             }
         },async (errors,results) => {
             let status = new Discord.MessageEmbed();
@@ -193,7 +201,22 @@ client.on('message', async msg => {
                 status.setTitle("@" + user + " - Status Overview");
             }
 
-            status.setThumbnail('https://login.oracle-d.com/' + user + ".jpg");
+            let avatarUrl = ''
+            switch (network) {
+                case 'hive':
+                    avatarUrl = 'https://images.hive.blog/u/' + user + '/avatar'
+                    break
+                case 'steem':
+                    avatarUrl = 'https://steemitimages.com/u/' + user + '/avatar'
+                    break
+                case 'blurt':
+                    avatarUrl = 'https://images.blurt.blog/u/' + user + '/avatar'
+                    break
+                default:
+                    break
+            }
+
+            status.setThumbnail(avatarUrl);
             status.setColor(0x009aa3);
             if (user === config.mainAccount) {
                 status.addField("Total Curated Videos:", results.msgCount[0].count, true);
@@ -201,7 +224,7 @@ client.on('message', async msg => {
             }
 
             status.addField("Current 100% Vote Value:","$" + results.voteValue.toFixed(3), true);
-            status.addField("Current Steem Power:", results.spCount.toFixed(3) + " SP", true);
+            status.addField("Current " + networkUCase + " Power:", results.spCount.toFixed(3) + " " + networkUCase.substr(0,1) + "P", true);
             status.addField("Current Voting Power:", results.mana + "%", true);
 
             if (results.blacklist.count > 0 && !config.team.includes(user)) {
