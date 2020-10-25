@@ -73,9 +73,9 @@ async function handleLink(msg) {
         console.log('Get @onelovedtube account error',err)
         return msg.channel.send('An error occured. Please check the logs!')
     }
-    if (helper.insufficientMana(dtcacc,steemacc,hiveacc)) {
-        return msg.channel.send('Voting mana is below required threshold. Please wait for our mana to recharge and try again later.')
-    }
+    // if (helper.insufficientMana(dtcacc,steemacc,hiveacc)) {
+    //     return msg.channel.send('Voting mana is below required threshold. Please wait for our mana to recharge and try again later.')
+    // }
     const link = helper.DTubeLink(msg.content);
     let video = new Discord.MessageEmbed();
     video.setFooter(config.discord.footer).setTimestamp();
@@ -142,6 +142,19 @@ async function handleLink(msg) {
         msg.channel.send("An error occured with Discord or curation database. Please check the logs!")
         console.log(err);
     }
+}
+
+function rechargeTextGraph(threshold,full) {
+    let result = ''
+    if (threshold)
+        result += threshold + ' to reach curation threshold'
+    if (threshold && full)
+        result += '\n'
+    if (full)
+        result += full + ' for a full recharge'
+    if (!threshold && !full)
+        result = 'Fully recharged'
+    return result
 }
 
 client.on('message', async msg => {
@@ -387,46 +400,36 @@ client.on('message', async msg => {
                 }
             }
         } else if (msg.content == '!mana') {
-            let manas
+            let manas, dtcacc, rechargeTimes, fullRechargeTimes
             try {
                 manas = await helper.apis.getManas(config.avalon.account, config.steem.account, config.hive.account, config.blurt.account)
+                dtcacc = await helper.apis.getAvalonAccount(config.avalon.account)
+                rechargeTimes = helper.rechargeTimes(manas,0)
+                fullRechargeTimes = helper.rechargeTimes(manas,1)
             } catch (e) {
                 console.log(e)
                 return msg.channel.send('An error occured. Please check the logs!')
             }
 
-            console.log(manas)
-
-            let active = 'Active'
-            // Decide whethher if curation is active
-            // if (manas.mana < config.voting_threshold) {
-            //     active = 'Inactive'
-            // }
+            let meetsThreshold = manas.avalon >= config.avalon.threshold
+            let status = 'Active'
+            if (!meetsThreshold)
+                status = 'Inactive'
+            else if (Object.keys(rechargeTimes).length > 0)
+                status = 'Partially Active'
 
             let embed = new Discord.MessageEmbed()
-                .addField('Status',active,true)
-                .addField('Avalon',helper.thousandSeperator(manas.dtc)+' VP',true)
-                .addField('Hive',manas.hive+' %',true)
-                .addField('Steem',manas.steem+' %',true)
-                .addField('Blurt',manas.blurt+' %',true)
+                .addField('Status',status,false)
+                .addField('Avalon - ' + helper.thousandSeperator(manas.avalon) + ' VP',helper.getRechargeTimeAvalon(dtcacc,config.avalon.threshold),false)
+                .addField('Hive - ' + manas.hive + ' %',rechargeTextGraph(rechargeTimes.hive,fullRechargeTimes.hive),false)
+                .addField('Steem - ' + manas.steem + ' %',rechargeTextGraph(rechargeTimes.steem,fullRechargeTimes.steem),false)
+                .addField('Blurt - ' + manas.blurt + ' %',rechargeTextGraph(rechargeTimes.blurt,fullRechargeTimes.blurt),false)
                 .setTitle('Current voting manas for @' + config.mainAccount)
                 .setFooter(config.discord.footer)
                 .setTimestamp()
 
-            // if (manas.mana < config.voting_threshold) {
-            //     active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(manas.mana,config.voting_threshold)
-            // }
-
-            // if (manas.mana != 100) {
-            //     // Calculate full recharge time
-            //     active += '\nTime for a full recharge: ' + helper.getRechargeTime(manas.mana,100)
-            // } else {
-            //     // Mana is fully charged
-            //     active += '\nMana is fully charged.'
-            // }
-
             msg.channel.send(embed)
-            
+
         } else if (helper.DTubeLink(msg.content)) {
             handleLink(msg)
         }

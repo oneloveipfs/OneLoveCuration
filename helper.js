@@ -203,7 +203,7 @@ const apis = {
         return new Promise(async (rs,rj) => {
             let result = {}
             if (dtc)
-                result.dtc = await apis.getAvalonVP(dtc)
+                result.avalon = await apis.getAvalonVP(dtc)
             if (stm)
                 result.steem = await apis.getVotingMana(stm,'steem')
             if (hve)
@@ -333,13 +333,60 @@ function getVoteValue(weight,voter,network,completion) {
     })
 }
 
+const thousandSeperator = (num) => {
+    let num_parts = num.toString().split(".")
+    num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    return num_parts.join(".")
+}
+
+const getRechargeTime = (currentMana, manaToGetRecharged) => {
+    // Calculate recharge time to threshold mana
+    let rechargeTimeMins = (manaToGetRecharged - currentMana) / (5/6)
+    let rechargeTimeHours = 0
+    while(rechargeTimeMins > 1) {
+        rechargeTimeHours = rechargeTimeHours + 1
+        rechargeTimeMins = rechargeTimeMins - 1
+    }
+    rechargeTimeMins = rechargeTimeMins * 60
+
+    let rechargeTime
+    if (rechargeTimeHours > 0)
+        rechargeTime = rechargeTimeHours + ' hrs '
+    rechargeTime += Math.floor(rechargeTimeMins) + ' mins'
+    return rechargeTime
+}
+
+const nextMilestone = (num) => {
+    return Math.pow(10,num.toString().length)
+}
+
+const getRechargeTimeAvalon = (account, vpThreshold) => {
+    let currentVp = javalon.votingPower(account)
+    let result = ''
+    let thresholdMet = false
+    let threshold2 = 0
+    if (currentVp >= vpThreshold) {
+        thresholdMet = true
+        threshold2 = vpThreshold
+        vpThreshold = nextMilestone(vpThreshold)
+    }
+    let hour = (vpThreshold - currentVp) / (account.balance / 100)
+    let mins = Math.ceil((hour - Math.floor(hour)) * 60)
+    if (hour > 0)
+        result += Math.floor(hour) + ' hrs '
+    result += mins + ' mins'
+    if (thresholdMet)
+        result += ' to reach ' + thousandSeperator(nextMilestone(threshold2)) + ' VP'
+    else
+        result += ' to reach curation threshold'
+    return result
+}
+
 function generatePermlink() {
     let permlink = ""
     let possible = "abcdefghijklmnopqrstuvwxyz0123456789"
-
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i++)
         permlink += possible.charAt(Math.floor(Math.random() * possible.length))
-    }
     return permlink
 }
 
@@ -360,39 +407,39 @@ module.exports = {
         return (diff / 60000);
     },
     getVoteValue,
+    getRechargeTimeAvalon,
     generatePermlink,
-    getRechargeTime: (currentMana, manaToGetRecharged) => {
-        // Calculate recharge time to threshold mana
-        var rechargeTimeMins = (manaToGetRecharged - currentMana) / (5/6)
-        var rechargeTimeHours = 0
-        while(rechargeTimeMins > 1) {
-            rechargeTimeHours = rechargeTimeHours + 1
-            rechargeTimeMins = rechargeTimeMins - 1
-        }
-        rechargeTimeMins = rechargeTimeMins * 60
-
-        var rechargeTime;
-        if (rechargeTimeHours > 0) {
-            rechargeTime = rechargeTimeHours + ' hours and ' + Math.floor(rechargeTimeMins) + ' minutes'
-        } else {
-            rechargeTime = Math.floor(rechargeTimeMins) + ' minutes'
-        }
-        return rechargeTime
-    },
-    insufficientMana: (dtc, stm, hve) => {
-        // Steem
-        let secondsago, mana
+    needsRecharge: (manas) => {
         let result = {}
-        secondsago = (new Date - new Date(stm[0].last_vote_time + 'Z')) / 1000
-        mana = Math.min((stm[0].voting_power + (10000 * secondsago / 432000))/100,100).toFixed(2)
-        if (mana < config.voting_threshold)
-            result.steem = mana
+        for (let net in manas) {
+            if (typeof manas[net] == 'string')
+                manas[net] = parseFloat(manas[net])
+            if (manas[net] < config[net].threshold)
+                result[net] = true
+            else
+                manas[net] = false
+        }
+        return result
     },
-    thousandSeperator: (num) => {
-        let num_parts = num.toString().split(".");
-        num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        return num_parts.join(".");
+    meetsThreshold: () => {
+        return new Promise(async (rs,rj) => {
+            let avalonVp = await apis.getAvalonVP(config.avalon.account)
+            rs(avalonVp >= config.avalon.threshold)
+        })
     },
+    rechargeTimes: (manas, type) => {
+        let result = {}
+        for (let net in manas) {
+            if (typeof manas[net] == 'string')
+                manas[net] = parseFloat(manas[net])
+            if (manas[net] < config[net].threshold && type == 0 && net != 'avalon') // Type 0: up to threshold
+                result[net] = getRechargeTime(manas[net],config[net].threshold)
+            else if (type == 1 && net != 'avalon' && manas[net] < 100)
+                result[net] = getRechargeTime(manas[net],100)
+        }
+        return result
+    },
+    thousandSeperator,
     uppercasefirst,
     vote: async (message, client, efficiency) => {
         return new Promise(async (resolve, reject) => {
@@ -445,7 +492,7 @@ module.exports = {
                     (ref[0] == 'blurt' && !voted.includes('blurt'))) {
                     voted.push(ref[0])
                     let ops = [graphOps.vote(ref[1],ref[2],weight,ref[0])]
-                    let wifs = [config.steem.wif]
+                    let wifs = [config[ref[0]].wif]
                     
                     if (weight >= config.resteem.threshold) {
                         // Resteem post if voting weight is high enough

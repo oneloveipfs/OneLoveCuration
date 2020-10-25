@@ -32,22 +32,26 @@ let config = {
         wif: '',
         vpMultiplier: 4,
         vpToSpendForFeedback: 20,
-        tag: ''
+        tag: '',
+        threshold: 100000
     },
     steem: {
         api: 'https://api.steemit.com',
         wif: '',
-        account: ''
+        account: '',
+        threshold: 90
     },
     hive: {
         api: 'https://hived.techcoderx.com',
         wif: '',
-        account: ''
+        account: '',
+        threshold: 90
     },
     blurt: {
         api: 'https://api.blurt.blog',
         wif: '',
-        account: ''
+        account: '',
+        threshold: 90
     },
     resteem: {
         wif: '',
@@ -55,8 +59,6 @@ let config = {
         threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
     },
     mainAccount: 'onelovedtube', // default account for obtaining voting mana
-    voting_threshold: 90, // minimum voting mana required to curate videos
-    voting_threshold_avalon: 1,
     team: [
         "d00k13",
         "graylan",
