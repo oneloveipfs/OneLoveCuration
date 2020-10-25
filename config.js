@@ -23,7 +23,8 @@ let config = {
             },
             min_age: 5, // minimum post age for voting
             timeout_minutes: 1 // wait x minutes after posting until the bot votes
-        }
+        },
+        footer: 'Powered by oneloved.tube curation'
     },
     avalon: {
         api: 'https://avalon.oneloved.tube',

@@ -199,7 +199,7 @@ const apis = {
             }
         })
     },
-    getManas: async (dtc,stm,hve) => {
+    getManas: async (dtc,stm,hve,blt) => {
         return new Promise(async (rs,rj) => {
             let result = {}
             if (dtc)
@@ -208,6 +208,8 @@ const apis = {
                 result.steem = await apis.getVotingMana(stm,'steem')
             if (hve)
                 result.hive = await apis.getVotingMana(hve,'hive')
+            if (blt)
+                result.blurt = await apis.getVotingMana(blt,'blurt')
             rs(result)
         })
     },
@@ -385,6 +387,11 @@ module.exports = {
         mana = Math.min((stm[0].voting_power + (10000 * secondsago / 432000))/100,100).toFixed(2)
         if (mana < config.voting_threshold)
             result.steem = mana
+    },
+    thousandSeperator: (num) => {
+        let num_parts = num.toString().split(".");
+        num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return num_parts.join(".");
     },
     uppercasefirst,
     vote: async (message, client, efficiency) => {

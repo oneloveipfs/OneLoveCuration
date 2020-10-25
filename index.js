@@ -78,7 +78,7 @@ async function handleLink(msg) {
     }
     const link = helper.DTubeLink(msg.content);
     let video = new Discord.MessageEmbed();
-    video.setFooter("Powered by oneloved.tube Curation").setTimestamp();
+    video.setFooter(config.discord.footer).setTimestamp();
     let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.techcoderx.com/v/', '').split('/')
     if (config.autovoteList.includes(authorInformation[0])) return msg.channel.send('Author is in our autovote list therefore cannot be manually curated.')
     if (config.blacklistedUsers.includes(authorInformation[0])) return msg.channel.send('Author is in the curation blacklist.')
@@ -165,7 +165,6 @@ client.on('message', async msg => {
         let network = msg.content.split(' ')[0].substr(1)
         let networkUCase = helper.uppercasefirst(network)
         let user = msg.content.replace('!steem','').replace('!hive','').replace('!blurt','').trim()
-        console.log('lookup',network,networkUCase,user)
 
         if (steem.utils.validateAccountName(user) !== null)
             user = config.mainAccount
@@ -194,7 +193,7 @@ client.on('message', async msg => {
             }
         },async (errors,results) => {
             let status = new Discord.MessageEmbed();
-            status.setFooter("Powered by oneloved.tube Curation");
+            status.setFooter(config.discord.footer);
             if (user === config.mainAccount) {
                 status.setTitle("OveLoveCuration Bot - Status Overview");
             } else {
@@ -251,7 +250,7 @@ client.on('message', async msg => {
                             console.log(exist[0].discord)
                             let user = client.guilds.get(config.discord.curation.guild).members.get(exist[0].discord)
                             let video = new Discord.MessageEmbed();
-                            video.setFooter("Powered by oneloved.tube Curation")
+                            video.setFooter(config.discord.footer)
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
                                 .addField("View Video", "[Watch Video](https://d.tube/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
@@ -268,7 +267,7 @@ client.on('message', async msg => {
                                     topTags.push(key)
                                 if (topTags.length == 0)
                                     topTags.push('No tags yet')
-                                video.setFooter("Powered by d.tube curation")
+                                video.setFooter(config.discord.footer)
                                     .setTimestamp()
                                     .setTitle("Feedback for: @" + result.author + '/' + result.link)
                                     .setAuthor("@" + result.author, 'https://image.d.tube/u/' + result.author + '/avatar', "https://d.tube/#!/c/" + result.author)
@@ -372,7 +371,7 @@ client.on('message', async msg => {
                             console.log(exist[0].discord)
                             let user = client.guilds.get(config.discord.curation.guild).members.get(exist[0].discord)
                             let video = new Discord.MessageEmbed();
-                            video.setFooter("Powered by oneloved.tube Curation")
+                            video.setFooter(config.discord.footer)
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
                                 .addField("View Video", "[Watch Video](https://d.tube/#!/v/" + exist[0].author + "/" + exist[0].permlink + ")", true)
@@ -388,44 +387,46 @@ client.on('message', async msg => {
                 }
             }
         } else if (msg.content == '!mana') {
-            asyncjs.parallel({
-                mana: (cb) => {
-                    helper.getVotingMana(config.mainAccount,(err,mana) => {
-                        if (err) return cb(err)
-                        cb(null,mana)
-                    })
-                },
-                vp: async (cb) => {
-                    try {
-                        let vp = await helper.apis.getAvalonVP(config.avalon.account)
-                        cb(null,vp)
-                    } catch (e) { cb(e) }
-                }
-            },(errors,manas) => {
-                if (errors) return msg.channel.send('An error occured. Please check the logs!')
+            let manas
+            try {
+                manas = await helper.apis.getManas(config.avalon.account, config.steem.account, config.hive.account, config.blurt.account)
+            } catch (e) {
+                console.log(e)
+                return msg.channel.send('An error occured. Please check the logs!')
+            }
 
-                var active = 'Active'
-                // Decide whethher if curation is active
-                if (manas.mana < config.voting_threshold) {
-                    active = 'Inactive'
-                }
+            console.log(manas)
 
-                if (manas.mana < config.voting_threshold) {
-                    active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(manas.mana,config.voting_threshold)
-                }
+            let active = 'Active'
+            // Decide whethher if curation is active
+            // if (manas.mana < config.voting_threshold) {
+            //     active = 'Inactive'
+            // }
 
-                if (manas.mana != 100) {
-                    // Calculate full recharge time
-                    active += '\nTime for a full recharge: ' + helper.getRechargeTime(manas.mana,100)
-                } else {
-                    // Mana is fully charged
-                    active += '\nMana is fully charged.'
-                }
+            let embed = new Discord.MessageEmbed()
+                .addField('Status',active,true)
+                .addField('Avalon',helper.thousandSeperator(manas.dtc)+' VP',true)
+                .addField('Hive',manas.hive+' %',true)
+                .addField('Steem',manas.steem+' %',true)
+                .addField('Blurt',manas.blurt+' %',true)
+                .setTitle('Current voting manas for @' + config.mainAccount)
+                .setFooter(config.discord.footer)
+                .setTimestamp()
 
-                var embed = new Discord.MessageEmbed();
-                embed.addField('Current voting mana for @' + config.mainAccount + ': ' + manas.mana + '%','Avalon VP available: ' + manas.vp + '\nCuration status: ' + active)
-                msg.channel.send(embed)
-            })
+            // if (manas.mana < config.voting_threshold) {
+            //     active += '\nTime to recharge mana to threshold of ' + config.voting_threshold + '%: ' + helper.getRechargeTime(manas.mana,config.voting_threshold)
+            // }
+
+            // if (manas.mana != 100) {
+            //     // Calculate full recharge time
+            //     active += '\nTime for a full recharge: ' + helper.getRechargeTime(manas.mana,100)
+            // } else {
+            //     // Mana is fully charged
+            //     active += '\nMana is fully charged.'
+            // }
+
+            msg.channel.send(embed)
+            
         } else if (helper.DTubeLink(msg.content)) {
             handleLink(msg)
         }
@@ -436,7 +437,7 @@ client.on('message', async msg => {
         if (faq.length > 0)
             if (faq === 'list') {
                 let faqs = Object.keys(config.mod_settings.faq);
-                let faq_embed = new Discord.MessageEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
+                let faq_embed = new Discord.MessageEmbed().setTimestamp().setFooter(config.discord.footer)
                     .setTitle("These are the help topics I know").setDescription(faqs.join(", "))
                     .addField("Usage:", "!faq *topic*")
                     .setThumbnail('https://image.flaticon.com/icons/png/512/258/258349.png');
@@ -444,7 +445,7 @@ client.on('message', async msg => {
             } else {
                 if (config.mod_settings.faq.hasOwnProperty(faq)) {
                     faq = config.mod_settings.faq[faq];
-                    let faq_embed = new Discord.MessageEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
+                    let faq_embed = new Discord.MessageEmbed().setTimestamp().setFooter(config.discord.footer)
                         .setTitle(faq[0]).setDescription(faq[1])
                         .setThumbnail('https://image.flaticon.com/icons/png/512/258/258349.png');
                     msg.channel.send({embed: faq_embed});
