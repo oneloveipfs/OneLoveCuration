@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
+const hive = require('@hiveio/hive-js')
 const steem = require("steem");
 const asyncjs = require('async')
 const javalon = require('javalon');
@@ -12,24 +13,14 @@ const fetch = require("node-fetch");
 const config = require('./config');
 const helper = require('./helper');
 
-steem.api.setOptions({url:'https://techcoderx.com'})
-javalon.init({ api: 'https://avalon.oneloved.tube' })
+steem.api.setOptions({url: config.steem.api , useAppbaseApi: true})
+javalon.init({ api: config.avalon.api })
+hive.api.setOptions({url: config.hive.api, useAppbaseApi: true, rebranded_api: true})
+hive.broadcast.updateOperations()
 
 client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    client
-        .guilds
-        .get(config.discord.curation.guild)
-        .channels
-        .get(config.discord.curation.channel)
-        .fetchMessages({limit: 100})
-        .then(messages => {
-            messages = Array.from(messages);
-            messages.forEach(message => {
-                helper.database.updateReactions(message[0], helper.countReaction(message[1]));
-            })
-        })
-});
+    console.log(`Logged in as ${client.user.tag}!`)
+})
 
 function buildCurationTable(DB_RESULT) {
     DB_RESULT = DB_RESULT.reverse();
@@ -55,63 +46,13 @@ function buildCurationTable(DB_RESULT) {
     return data.join("\n");
 }
 
-/*
-function createChartOptions(DB_RESULT) {
-    DB_RESULT = DB_RESULT.reverse();
-    return {
-        type: 'line',
-        data: {
-
-            labels: DB_RESULT.map(x => (new Date(x.posted)).toLocaleDateString("en-US")),
-            datasets: [{
-                label: 'Daily Curated Videos',
-                data: DB_RESULT.map(x => x.count),
-                borderColor: "#ff0000",
-                backgroundColor: [
-                    'rgba(245,245,245,0.4)'
-                ],
-                borderWidth: 3
-            }]
-        },
-        options: {
-            legend: {
-                labels: {
-                    fontColor: "white"
-                }
-            },
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        fontColor: "#FFF",
-                    }
-                }], xAxes: [{
-                    backgroundColor: [
-                        'rgba(245,245,245,0.4)'
-                    ],
-                    ticks: {
-                        fontColor: "#FFF"
-                    }
-                }]
-            }
-        }
-    }
-}
-*/
-
-function countCurators() {
-    return client.guilds.get(config.discord.curation.guild).roles.get(config.discord.curation.role).members.size
-}
-
-async function getSP(account) {
-    let sp = await steem.api.getAccountsAsync([account]);
-    let props = await steem.api.getDynamicGlobalPropertiesAsync();
-    sp = sp[0];
-    return steem.formatter.vestToSteem(parseFloat(sp.vesting_shares) + parseFloat(sp.received_vesting_shares) - parseFloat(sp.delegated_vesting_shares), props.total_vesting_shares, props.total_vesting_fund_steem)
-
+async function countCurators() {
+    let guild = await client.guilds.fetch(config.discord.curation.guild)
+    return guild.roles.cache.get(config.discord.curation.role).members.size
 }
 
 async function getBlacklistEntries(user) {
-    let entries = await (await fetch("http://blacklist.usesteem.com/user/" + user)).json();
+    let entries = await (await fetch("http://blacklist.usehive.com/user/" + user)).json();
     return {
         entries: entries.blacklisted,
         text: entries.blacklisted.join(", "),
@@ -119,106 +60,90 @@ async function getBlacklistEntries(user) {
     }
 }
 
-function handleLink(msg) {
+async function handleLink(msg) {
     // Check if voting mana is above threshold
-    steem.api.getAccounts([config.mainAccount],(err,res) => {
-        if (err) {
-            console.log('Get @onelovedtube Steem account error',err)
-            return msg.channel.send('An error occured. Please check the logs!')
-        }
-        let secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
-        let mana = res[0].voting_power + (10000 * secondsago / 432000)
-        mana = Math.min(mana/100,100).toFixed(2)
-        if (mana < config.voting_threshold) {
-            msg.channel.send('Our current voting mana is ' + mana + '% but our minimum threshold for curation is ' + config.voting_threshold + '%. Please wait for our mana to recharge and try again later.')
-            return
-        } else {
-            const link = helper.DTubeLink(msg.content);
-            let video = new Discord.RichEmbed();
-            video.setFooter("Powered by oneloved.tube Curation")
-                .setTimestamp();
-            let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').split('/')
-            if (config.autovoteList.includes(authorInformation[0])) return msg.channel.send('Author is in our autovote list therefore cannot be manually curated.')
-            if (config.blacklistedUsers.includes(authorInformation[0])) return msg.channel.send('Author is in the curation blacklist.')
-            javalon.getContent(authorInformation[0], authorInformation[1], async (err, result) => {
-                if (err) {
-                    msg.reply("Oops! An error occured. Please check the logs!");
-                    console.log(err);
-                } else {
-                    try {
-                        let json = result.json
-                        let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.ts)));
-                        let waitTime = config.discord.curation.timeout_minutes
-                        let efficiency = 1
-                        if (posted_ago < config.discord.curation.min_age) {
-                            waitTime = config.discord.curation.min_age - posted_ago
-                        }
-                        let decentralizedProvs = ['IPFS','BTFS','Skynet']
-                        if (!decentralizedProvs.includes(json.providerName)) efficiency = 0.5
-                        if (posted_ago > 2880) {
-                            msg.channel.send("This video is too old for curation through oneloved.tube");
-                        } else {
-                            var topTags = []
-                            for (const key in result.tags)
-                                topTags.push(key)
-                            if (topTags.length == 0)
-                                topTags.push('No tags yet')
-                            video.setTitle(json.title.substr(0, 1024))
-                                .setAuthor("@" + result.author, null, "https://d.tube/#!/c/" + result.link)
-                                .setThumbnail(json.thumbnailUrl)
-                                .setDescription("[Watch Video](" + link + ")")
-                                .addField("Tags", topTags.join(', '), true)
-                                .addField("Uploaded", posted_ago + ' minutes ago', true)
-                                .setColor(0x3fafff);
-                            let exist = await helper.database.existMessage(result.author, result.link);
-                            if (!exist) {
-                                msg.channel.send({embed: video}).then(async (embed) => {
-                                    embed.react(config.discord.curation.other_emojis.clock).then(clockReaction => {
-                                        setTimeout(() => {
-                                            clockReaction.remove();
-                                            helper.database.getMessage(result.author, result.link).then(message => {
-                                                helper.vote(message, client, efficiency).then(async (tx) => {
-                                                    let msg = await helper.database.getMessage(result.author, result.link);
-                                                    embed.react(config.discord.curation.other_emojis.check);
-                                                    video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
-                                                    video.addField("VP Spent",msg.vp_spent,true)
-                                                    embed.edit({embed: video})
-                                                }).catch(error => {
-                                                    let errmsg = "An error occured while voting. Please check the logs!"
-                                                    video.addField("ERROR", errmsg);
-                                                    embed.edit({embed: video});
-                                                    console.error('Failed to vote! Error: ' + error);
-                                                    embed.react(config.discord.curation.other_emojis.cross);
-                                                })
-                                            })
-                                        }, 60 * 1000 * waitTime)
-                                    });
-                                    helper.database.addMessage(embed.id, result.author, result.link)
-                                }).catch(error => {
-                                    console.log(error)
-                                });
-                            } else {
-                                msg.reply("This video has already been posted to the curation channel.").then(reply => {
-                                    setTimeout(() => {
-                                        reply.delete();
-                                    }, 5000)
-                                })
-                            }
-                        }
-                    } catch (err) {
-                        msg.reply("Oops! An error occured. Please check the logs!");
-                        console.log(err);
-                    }
-                }
-            })
-        }
-    })
+    let steemacc, hiveacc, dtcacc, dtccontent
+    try {
+        steemacc = await helper.apis.getAccount(config.mainAccount,'steem')
+        hiveacc = await helper.apis.getAccount(config.mainAccount,'hive')
+        dtcacc = await helper.apis.getAvalonAccount(config.mainAccount)
+    } catch (e) {
+        console.log('Get @onelovedtube account error',err)
+        return msg.channel.send('An error occured. Please check the logs!')
+    }
+    if (helper.insufficientMana(dtcacc,steemacc,hiveacc)) {
+        return msg.channel.send('Voting mana is below required threshold. Please wait for our mana to recharge and try again later.')
+    }
+    const link = helper.DTubeLink(msg.content);
+    let video = new Discord.MessageEmbed();
+    video.setFooter("Powered by oneloved.tube Curation").setTimestamp();
+    let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.techcoderx.com/v/', '').split('/')
+    if (config.autovoteList.includes(authorInformation[0])) return msg.channel.send('Author is in our autovote list therefore cannot be manually curated.')
+    if (config.blacklistedUsers.includes(authorInformation[0])) return msg.channel.send('Author is in the curation blacklist.')
+    try {
+        dtccontent = await helper.apis.getAvalonContent(authorInformation[0], authorInformation[1])
+    } catch (e) {
+        msg.channel.send("An error occured with fetching Avalon content.")
+        return console.log('Avalon get content error',err)
+    }
+    let json = dtccontent.json
+    let posted_ago = Math.round(helper.getMinutesSincePost(new Date(dtccontent.ts)));
+    let waitTime = config.discord.curation.timeout_minutes
+    let efficiency = 1
+    if (posted_ago < config.discord.curation.min_age) {
+        waitTime = config.discord.curation.min_age - posted_ago
+    }
+    if (!json.files || (!json.files.ipfs || !json.files.ipfs.vid || !json.files.ipfs.vid.src) &&
+                       (!json.files.btfs || !json.files.btfs.vid || !json.files.btfs.vid.src) &&
+                       (!json.files.sia || !json.files.sia.vid || !json.files.sia.vid.src)) {
+        efficiency = 0.5
+    }
+    if (posted_ago > 2880)
+        return msg.channel.send("This video is too old for curation through oneloved.tube");
+    var topTags = []
+    for (const key in dtccontent.tags)
+        topTags.push(key)
+    if (topTags.length == 0)
+        topTags.push('No tags yet')
+    video.setTitle(json.title.substr(0, 512))
+        .setAuthor("@" + dtccontent.author, null, "https://d.tube/#!/c/" + dtccontent.link)
+        .setThumbnail(json.thumbnailUrl)
+        .setDescription("[Watch Video](" + link + ")")
+        .addField("Tags", topTags.join(', '), true)
+        .addField("Uploaded", posted_ago + ' minutes ago', true)
+        .setColor(0x3fafff)
+    try {
+        let exist = await helper.database.existMessage(dtccontent.author, dtccontent.link);
+        if (!exist) {
+            let embed = await msg.channel.send({embed: video})
+            let clockReaction = await embed.react(config.discord.curation.other_emojis.clock)
+            setTimeout(async () => {
+                clockReaction.remove();
+                let message = await helper.database.getMessage(dtccontent.author, dtccontent.link)
+                helper.vote(message, client, efficiency).then(async () => {
+                    let msg = await helper.database.getMessage(dtccontent.author, dtccontent.link)
+                    embed.react(config.discord.curation.other_emojis.check);
+                    video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
+                    video.addField("VP Spent",msg.vp_spent,true)
+                    embed.edit({embed: video})
+                }).catch(error => {
+                    let errmsg = "An error occured while voting. Please check the logs!"
+                    video.addField("ERROR", errmsg)
+                    embed.edit({embed: video})
+                    console.error('Failed to vote! Error: ' + error)
+                    embed.react(config.discord.curation.other_emojis.cross)
+                })
+            }, 60 * 1000 * waitTime)
+            helper.database.addMessage(embed.id, dtccontent.author, dtccontent.link)
+        } else msg.channel.send("This video has already been posted to the curation channel.")
+    } catch (err) {
+        msg.channel.send("An error occured with Discord or curation database. Please check the logs!")
+        console.log(err);
+    }
 }
 
-client.on('message', msg => {
-    if (msg.author.bot) {
-        return;
-    }
+client.on('message', async msg => {
+    if (msg.author.bot) return
 
     if (msg.content.startsWith("!table")) {
         let days = parseInt(msg.content.replace("!table", "").trim());
@@ -234,69 +159,58 @@ client.on('message', msg => {
         })
     }
 
-    if (msg.content.startsWith("!status")) {
-        if (config.status_command_enabled != true) return
+    if (msg.content.startsWith("!steem")) {
+        let user = msg.content.replace("!steem", "").trim();
 
-        // TODO: complete list of team members
-        const team = config.team
-
-        let user = msg.content.replace("!status", "").trim();
-
-        if (steem.utils.validateAccountName(user) !== null) {
+        if (steem.utils.validateAccountName(user) !== null)
             user = config.mainAccount
-        }
 
-        steem.api.getAccounts([user], (err, res) => {
-            if (err || res.length === 0) {
-                msg.reply(user + " seems not to be a valid Steem account");
-            } else {
-                asyncjs.parallel({
-                    msgCount: (cb) => {
-                        helper.database.countMessages().then(count => cb(null,count))
-                    },
-                    spCount: (cb) => {
-                        getSP(user).then(sp => cb(null,sp))
-                    },
-                    mana: (cb) => {
-                        helper.getVotingMana([user],(err,vp) => cb(err,vp))
-                    },
-                    voteValue: (cb) => {
-                        helper.getVoteValue(10000,user,(err,vote_value) => cb(err,vote_value))
-                    },
-                    blacklist: (cb) => {
-                        getBlacklistEntries(user).then(blacklist => cb(null,blacklist))
-                    }
-                },(errors,results) => {
-                    let status = new Discord.RichEmbed();
-                    status.setFooter("Powered by oneloved.tube Curation");
-                    if (user === config.mainAccount) {
-                        status.setTitle("OveLoveCuration Bot - Status Overview");
-                    } else {
-                        status.setTitle("@" + user + " - Status Overview");
-                    }
-
-                    status.setThumbnail('https://login.oracle-d.com/' + user + ".jpg");
-                    status.setColor(0x009aa3);
-                    if (user === config.mainAccount) {
-                        status.addField("Total Curated Videos:", results.msgCount[0].count, true);
-                        status.addField("Total Number of Curators:", countCurators(), true);
-                    }
-
-                    status.addField("Current 100% Vote Value:","$" + results.voteValue.toFixed(3), true);
-                    status.addField("Current Steem Power:", results.spCount.toFixed(3) + " SP", true);
-                    status.addField("Current Voting Power:", results.mana + "%", true);
-
-                    if (results.blacklist.count > 0 && !team.includes(user)) {
-                        status.addField("Blacklisted:",results.blacklist.text);
-                    }
-
-                    if (team.includes(user)) {
-                        status.addField("OneLoveDTube Team Member:","Yes 🤟");
-                    }
-                    msg.channel.send(status)
-                })
+        let res = await helper.apis.getAccount(user,'steem')
+        if (res.length === 0)
+            return msg.reply(user + " seems not to be a valid Steem account");
+        asyncjs.parallel({
+            msgCount: (cb) => {
+                helper.database.countMessages().then(count => cb(null,count))
+            },
+            spCount: (cb) => {
+                helper.apis.getPower(user,'steem').then(sp => cb(null,sp))
+            },
+            mana: (cb) => {
+                helper.apis.getVotingMana(user,'steem').then(vp => cb(null,vp))
+            },
+            voteValue: (cb) => {
+                helper.getVoteValue(10000,user,(err,vote_value) => cb(err,vote_value))
+            },
+            blacklist: (cb) => {
+                getBlacklistEntries(user).then(blacklist => cb(null,blacklist))
             }
-        });
+        },async (errors,results) => {
+            let status = new Discord.MessageEmbed();
+            status.setFooter("Powered by oneloved.tube Curation");
+            if (user === config.mainAccount) {
+                status.setTitle("OveLoveCuration Bot - Status Overview");
+            } else {
+                status.setTitle("@" + user + " - Status Overview");
+            }
+
+            status.setThumbnail('https://login.oracle-d.com/' + user + ".jpg");
+            status.setColor(0x009aa3);
+            if (user === config.mainAccount) {
+                status.addField("Total Curated Videos:", results.msgCount[0].count, true);
+                status.addField("Total Number of Curators:", await countCurators(), true);
+            }
+
+            status.addField("Current 100% Vote Value:","$" + results.voteValue.toFixed(3), true);
+            status.addField("Current Steem Power:", results.spCount.toFixed(3) + " SP", true);
+            status.addField("Current Voting Power:", results.mana + "%", true);
+
+            if (results.blacklist.count > 0 && !config.team.includes(user)) {
+                status.addField("Blacklisted:",results.blacklist.text);
+            } else if (config.team.includes(user)) {
+                status.addField("OneLoveDTube Team Member:","Yes 🤟");
+            }
+            msg.channel.send(status)
+        })
     }
 
     if (msg.channel.id === config.discord.curation.channel) {
@@ -313,7 +227,7 @@ client.on('message', msg => {
                         if (exist.length !== 0) {
                             console.log(exist[0].discord)
                             let user = client.guilds.get(config.discord.curation.guild).members.get(exist[0].discord)
-                            let video = new Discord.RichEmbed();
+                            let video = new Discord.MessageEmbed();
                             video.setFooter("Powered by oneloved.tube Curation")
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
@@ -325,7 +239,7 @@ client.on('message', msg => {
                         } else {
                             javalon.getContent(authorInformation[0],authorInformation[1],async (err,result) => {
                                 let posted_ago = Math.round(helper.getMinutesSincePost(new Date(result.ts)))
-                                let video = new Discord.RichEmbed()
+                                let video = new Discord.MessageEmbed()
                                 let topTags = []
                                 for (const key in result.tags)
                                     topTags.push(key)
@@ -434,7 +348,7 @@ client.on('message', msg => {
                         if (exist.length === 1) {
                             console.log(exist[0].discord)
                             let user = client.guilds.get(config.discord.curation.guild).members.get(exist[0].discord)
-                            let video = new Discord.RichEmbed();
+                            let video = new Discord.MessageEmbed();
                             video.setFooter("Powered by oneloved.tube Curation")
                                 .setTimestamp()
                                 .setTitle("Feedback for: @" + exist[0].author + '/' + exist[0].permlink)
@@ -453,16 +367,16 @@ client.on('message', msg => {
         } else if (msg.content == '!mana') {
             asyncjs.parallel({
                 mana: (cb) => {
-                    helper.getVotingMana([config.mainAccount],(err,mana) => {
+                    helper.getVotingMana(config.mainAccount,(err,mana) => {
                         if (err) return cb(err)
                         cb(null,mana)
                     })
                 },
-                vp: (cb) => {
-                    helper.getAvalonVP(config.avalon.account,(err,vp) => {
-                        if (err) return cb(err)
+                vp: async (cb) => {
+                    try {
+                        let vp = await helper.apis.getAvalonVP(config.avalon.account)
                         cb(null,vp)
-                    })
+                    } catch (e) { cb(e) }
                 }
             },(errors,manas) => {
                 if (errors) return msg.channel.send('An error occured. Please check the logs!')
@@ -485,7 +399,7 @@ client.on('message', msg => {
                     active += '\nMana is fully charged.'
                 }
 
-                var embed = new Discord.RichEmbed();
+                var embed = new Discord.MessageEmbed();
                 embed.addField('Current voting mana for @' + config.mainAccount + ': ' + manas.mana + '%','Avalon VP available: ' + manas.vp + '\nCuration status: ' + active)
                 msg.channel.send(embed)
             })
@@ -496,10 +410,10 @@ client.on('message', msg => {
 
     if (msg.content.startsWith('!faq') && config.mod_settings.enabled === true) {
         let faq = msg.content.replace('!faq', '').trim();
-        if (faq.length > 0) {
+        if (faq.length > 0)
             if (faq === 'list') {
                 let faqs = Object.keys(config.mod_settings.faq);
-                let faq_embed = new Discord.RichEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
+                let faq_embed = new Discord.MessageEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
                     .setTitle("These are the help topics I know").setDescription(faqs.join(", "))
                     .addField("Usage:", "!faq *topic*")
                     .setThumbnail('https://image.flaticon.com/icons/png/512/258/258349.png');
@@ -507,13 +421,12 @@ client.on('message', msg => {
             } else {
                 if (config.mod_settings.faq.hasOwnProperty(faq)) {
                     faq = config.mod_settings.faq[faq];
-                    let faq_embed = new Discord.RichEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
+                    let faq_embed = new Discord.MessageEmbed().setTimestamp().setFooter("Powered by oneloved.tube")
                         .setTitle(faq[0]).setDescription(faq[1])
                         .setThumbnail('https://image.flaticon.com/icons/png/512/258/258349.png');
                     msg.channel.send({embed: faq_embed});
                 }
             }
-        }
     }
 
 });
@@ -539,4 +452,4 @@ process.on('unhandledRejection', function (error, p) {
     console.log('unhandledRejection',error)
     console.log(p);
     process.exit(1)
-});
+})

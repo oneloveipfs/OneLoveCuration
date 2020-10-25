@@ -2,7 +2,7 @@ let config = {
     discord: {
         token: "",
         curation: {
-            channel: "522337378329952256", // the channel where the curation takes place
+            channel: "769755764003700749", // the channel where the curation takes place
             guild: "418646135725359104", // the guild where the curation takes place
             role: "473760034023538689", // Discord role ID for the CurationTeam (in onelovedtube server) role
             curation_emojis: { // this emojis are used by the bot to calculate the vote
@@ -10,7 +10,7 @@ let config = {
                 down: "👎",
                 one_hundred: "💯",
                 game_die: "🎲",
-                heart: '❤'
+                heart: '❤️'
             },
             other_emojis: {
                 clock: "⏰", // waiting for curators to add reactions
@@ -25,17 +25,37 @@ let config = {
             timeout_minutes: 1 // wait x minutes after posting until the bot votes
         }
     },
+    avalon: {
+        api: 'https://avalon.oneloved.tube',
+        account: '',
+        wif: '',
+        vpMultiplier: 4,
+        vpToSpendForFeedback: 20,
+        tag: ''
+    },
     steem: {
-        wif: "",
-        account: "onelovecuration"
+        api: 'https://api.steemit.com',
+        wif: '',
+        account: ''
+    },
+    hive: {
+        api: 'https://hived.techcoderx.com',
+        wif: '',
+        account: ''
+    },
+    blurt: {
+        api: 'https://api.blurt.blog',
+        wif: '',
+        account: ''
     },
     resteem: {
-        wif: "",
-        account: "onelovedtube",
+        wif: '',
+        account: '',
         threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
     },
-    mainAccount: "onelovedtube", // default account for obtaining voting mana
+    mainAccount: 'onelovedtube', // default account for obtaining voting mana
     voting_threshold: 90, // minimum voting mana required to curate videos
+    voting_threshold_avalon: 1,
     team: [
         "d00k13",
         "graylan",
@@ -55,35 +75,26 @@ let config = {
         "priyanarc",
         "gaborockstar",
         "kaerpediem",
-        "rem-steem"
+        "dpet",
+        "dtube",
+        "chimzycash"
     ],
     blacklistedUsers: [
         "muhammadrizki96",
         "jacksonchakma",
         "kawaiicrush",
         "steemnurse",
-        "girlygamer",
-        "dcooperation",
-        "clixmoney"
+        "girlygamer"
     ],
-    status_command_enabled: true,
-    avalon: {
-        account: 'onelovecuration',
-        wif: '',
-        vpMultiplier: 2,
-        vpToSpendForFeedback: 20,
-        tag: ''
-    },
     database: {
         host: "localhost",
         user: "root",
-        password: "Wjf9qWF2VaKN",
+        password: "",
         database: "dtube",
 	    charset: "utf8mb4"
     },
     mod_settings: {
         enabled: true,
-        group_name: "get-help",
         faq: {
             "error404": [ // the key. Usage like !faq error
                 "I'm getting an ERROR 404 while pinning videos. What is wrong?", // the displayed question

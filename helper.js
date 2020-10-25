@@ -1,7 +1,9 @@
-const config = require('./config');
-const steem = require('steem');
+const config = require('./config')
+const hive = require('@hiveio/hive-js')
+const steem = require('steem')
+const blurt = require('@blurtfoundation/blurtjs')
 const asyncjs = require('async')
-const javalon = require('javalon');
+const javalon = require('javalon')
 
 let database = require('mysql').createConnection(config.database);
 
@@ -139,7 +141,6 @@ database.feedBackExist = async (author, permlink) => {
 database.addFeedback = async (from, msg, author, permlink) => {
     let sql = "INSERT INTO feedback (discord,message,author,permlink) VALUES (?,?,?,?)";
     return new Promise((resolve, reject) => {
-
         database.query(sql, [from, msg, author, permlink], (err, result) => {
             if (err) {
                 console.log(err);
@@ -148,8 +149,107 @@ database.addFeedback = async (from, msg, author, permlink) => {
                 resolve(true);
             }
         })
-    });
-};
+    })
+}
+
+// function uppercasefirst(str) {
+//     return str.charAt(0).toUpperCase() + str.slice(1)
+// }
+
+const apis = {
+    getAccount: (account,network) => {
+        return new Promise((rs,rj) => apis.strToAPI(network).api.getAccounts([account],(e,r) => {
+            if (e) return rj(e)
+            rs(r)
+        }))
+    },
+    getAvalonAccount: (account) => {
+        return new Promise((rs,rj) => javalon.getAccount(account,(e,r) => {
+            if (e) return rj(e)
+            rs(r)
+        }))
+    },
+    getAvalonContent: (name,link) => {
+        return new Promise((rs,rj) => javalon.getContent(name,link,(e,r) => {
+            if (e) return rj(e)
+            rs(r)
+        }))
+    },
+    getPower: (account,network) => {
+        return new Promise(async (rs,rj) => {
+            let sp = await apis.strToAPI(network).api.getAccountsAsync([account])
+            let props = await apis.strToAPI(network).api.getDynamicGlobalPropertiesAsync()
+            sp = sp[0]
+            rs(apis.strToAPI(network).formatter.vestToSteem(parseFloat(sp.vesting_shares) + parseFloat(sp.received_vesting_shares) - parseFloat(sp.delegated_vesting_shares), props.total_vesting_shares, props['total_vesting_fund_'+network]))
+        })
+    },
+    getVotingMana: (account,network) => {
+        return new Promise(async (rs,rj) => {
+            let acc = await apis.getAccount(account,network)
+            let secondsago = (new Date - new Date(acc[0].last_vote_time + 'Z')) / 1000
+            var mana = acc[0].voting_power + (10000 * secondsago / 432000)
+            mana = Math.min(mana/100,100).toFixed(2)
+            rs(mana)
+        })
+    },
+    getAvalonVP: async (account) => {
+        return new Promise(async (rs,rj) => {
+            try {
+                let acc = await apis.getAvalonAccount(account)
+                rs(javalon.votingPower(acc))
+            } catch (e) {
+                return rj(e)
+            }
+        })
+    },
+    getManas: async (dtc,stm,hve) => {
+        return new Promise(async (rs,rj) => {
+            let result = {}
+            if (dtc)
+                result.dtc = await apis.getAvalonVP(dtc)
+            if (stm)
+                result.steem = await apis.getVotingMana(stm,'steem')
+            if (hve)
+                result.hive = await apis.getVotingMana(hve,'hive')
+            rs(result)
+        })
+    },
+    strToAPI: (network) => {
+        switch (network) {
+        case 'steem':
+            return steem
+        case 'hive':
+            return hive
+        case 'blurt':
+            return blurt
+        default:
+            throw new Error('network does not exist')
+        }
+    }
+}
+
+const graphOps = {
+    vote: (author,link,weight,network) => {
+        return ['vote',{
+            voter: config[network].account,
+            author: author,
+            permlink: link,
+            weight: weight
+        }]
+    },
+    reblog: (author,link) => {
+        return ['custom_json',{
+            required_auths: [],
+            required_posting_auths: [config.resteem.account],
+            id: 'follow',
+            json: JSON.stringify(['reblog',{
+                account: config.resteem.account,
+                author: author,
+                permlink: link
+            }])
+        }]
+    }
+}
 
 function calculateVote(post,efficiency) {
     if (post.one_hundred >= 3)
@@ -189,24 +289,11 @@ function countReaction(message) {
     let reactions = {}
     for (const key in config.discord.curation.curation_emojis)
         reactions[key] =
-            message.reactions.get(config.discord.curation.curation_emojis[key]) ?
-                message.reactions.get(config.discord.curation.curation_emojis[key]).count
+            message.reactions.cache.get(config.discord.curation.curation_emojis[key]) ?
+                message.reactions.cache.get(config.discord.curation.curation_emojis[key]).count
                 : 0
 
     return reactions;
-}
-
-function getVotingMana(account,cb) {
-    steem.api.getAccounts(account,(err,res) => {
-        if (err) {
-            cb(err)
-            return
-        }
-        let secondsago = (new Date - new Date(res[0].last_vote_time + 'Z')) / 1000
-        var mana = res[0].voting_power + (10000 * secondsago / 432000)
-        mana = Math.min(mana/100,100).toFixed(2)
-        cb(null,mana)
-    })
 }
 
 function getVoteValue(weight,voter,completion) {
@@ -235,13 +322,6 @@ function getVoteValue(weight,voter,completion) {
     })
 }
 
-function getAvalonVP(account,cb) {
-    javalon.getAccount(account,(err,res) => {
-        if (err) return cb(err)
-        cb(null,javalon.votingPower(res))
-    })
-}
-
 function generatePermlink() {
     let permlink = ""
     let possible = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -257,20 +337,18 @@ module.exports = {
         let words = str.split(' ')
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
-            if (word.startsWith('https://d.tube') || word.startsWith('https://dtube.network'))
+            if (word.startsWith('https://d.tube') || word.startsWith('https://dtube.techcoderx.com'))
                 return word
         }
-
     },
+    apis,
     calculateVote,
     countReaction,
     getMinutesSincePost: (posted) => {
         let diff = (new Date()).getTime() - posted.getTime();
         return (diff / 60000);
     },
-    getVotingMana,
     getVoteValue,
-    getAvalonVP,
     generatePermlink,
     getRechargeTime: (currentMana, manaToGetRecharged) => {
         // Calculate recharge time to threshold mana
@@ -290,113 +368,82 @@ module.exports = {
         }
         return rechargeTime
     },
+    insufficientMana: (dtc, stm, hve) => {
+        // Steem
+        let secondsago, mana
+        let result = {}
+        secondsago = (new Date - new Date(stm[0].last_vote_time + 'Z')) / 1000
+        mana = Math.min((stm[0].voting_power + (10000 * secondsago / 432000))/100,100).toFixed(2)
+        if (mana < config.voting_threshold)
+            result.steem = mana
+    },
     vote: async (message, client, efficiency) => {
-        return new Promise((resolve, reject) => {
-            client
-                .guilds
-                .get(config.discord.curation.guild)
-                .channels
-                .get(config.discord.curation.channel)
-                .fetchMessage(message.discord_id).then(post => {
-                database.updateReactions(post.id, countReaction(post)).then(async () => {
-                    let weight = calculateVote(message, efficiency);
-                    if (weight === 0) {
-                        reject('Weight=0')
-                    } else {
-                        console.log('voting', message.author + '/' + message.permlink, weight);
+        return new Promise(async (resolve, reject) => {
+            let post = await client.guilds.cache.get(config.discord.curation.guild)
+                .channels.cache.get(config.discord.curation.channel)
+                .messages.cache.get(message.discord_id)
+            await database.updateReactions(post.id, countReaction(post))
+            let weight = calculateVote(message, efficiency);
+            if (weight === 0)
+                return reject('Weight=0')
 
-                        // voting on avalon
-                        let avalonVPPromise = new Promise((resolve,reject) => {
-                            getAvalonVP(config.avalon.account,(err,vp) => {
-                                if (err) return reject(err)
-                                resolve(vp)
-                            })
-                        })
+            // voting on avalon
+            let currentAvalonVP = await apis.getAvalonVP(config.avalon.account)
+            let vpToSpend = Math.floor((weight / 10000) * (config.avalon.vpMultiplier / 100) * currentAvalonVP)
+            if (vpToSpend < 1) vpToSpend = 1
 
-                        let currentAvalonVP = await avalonVPPromise
-                        let vpToSpend = Math.floor((weight / 10000) * (config.avalon.vpMultiplier / 100) * currentAvalonVP)
+            console.log('voting', message.author + '/' + message.permlink, weight, vpToSpend)
 
-                        // VP spent must be at least 1
-                        if (vpToSpend < 1) vpToSpend = 1
+            var newTx = {
+                type: javalon.TransactionType.VOTE,
+                data: {
+                    author: message.author,
+                    link: message.permlink,
+                    vt: vpToSpend,
+                    tag: config.avalon.tag
+                }
+            }
+            
+            newTx = javalon.sign(config.avalon.wif, config.avalon.account, newTx)
 
-                        var newTx = {
-                            type: javalon.TransactionType.VOTE,
-                            data: {
-                                author: message.author,
-                                link: message.permlink,
-                                vt: vpToSpend,
-                                tag: config.avalon.tag
-                            }
-                        }
-                        
-                        newTx = javalon.sign(config.avalon.wif, config.avalon.account, newTx)
+            javalon.sendRawTransaction(newTx, function(err, res) {
+                if (!err) {
+                    let sql = "UPDATE message SET voted = 1, vote_weight = ?, vp_spent = ? WHERE author = ? and permlink = ?";
+                    database.query(sql, [weight, vpToSpend, message.author, message.permlink], (err, result) => {
+                        console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink);
+                        resolve(result);
+                    })
+                } else {
+                    return reject('Avalon vote error' + JSON.stringify(err))
+                }
+            })
 
-                        javalon.sendRawTransaction(newTx, function(err, res) {
-                            if (!err) {
-                                let sql = "UPDATE message SET voted = 1, vote_weight = ?, vp_spent = ? WHERE author = ? and permlink = ?";
-                                database.query(sql, [weight, vpToSpend, message.author, message.permlink], (err, result) => {
-                                    console.log("Voted with " + (weight / 100) + "% for @" + message.author + '/' + message.permlink);
-                                    resolve(result);
-                                })
-                            } else {
-                                return reject('Avalon vote error' + JSON.stringify(err))
-                            }
-                        })
-
-                        javalon.getContent(message.author, message.permlink, function(err, res) {
-                            if (err) return reject(err)
-                            if (res.json && res.json.refs) {
-                                for (let i = 0; i < res.json.refs.length; i++) {
-                                    var ref = res.json.refs[i].split('/')
-                                    if (ref[0] == 'steem') {
-                                        // voting on steem !
-
-                                        let ops = [
-                                            ['vote',{
-                                                voter: config.steem.account,
-                                                author: ref[1], //author
-                                                permlink: ref[2], //permlink
-                                                weight: weight
-                                            }]
-                                        ]
-                                        
-                                        var wifs = [config.steem.wif]
-                                        
-                                        if (weight >= config.resteem.threshold) {
-                                            // Resteem post if voting weight is high enough
-                                            ops.push(['custom_json',{
-                                                required_auths: [],
-                                                required_posting_auths: [config.resteem.account],
-                                                id: 'follow',
-                                                json: JSON.stringify(['reblog',{
-                                                    account: config.resteem.account,
-                                                    author: ref[1],
-                                                    permlink: ref[2]
-                                                }])
-                                            }])
-                                        
-                                            if (config.resteem.wif !== config.steem.wif)
-                                                wifs.push(config.resteem.wif)
-                                        }
-                                        
-                                        steem.broadcast.send({
-                                            extensions: [],
-                                            operations: ops
-                                        },wifs,(err,result_bc) => {
-                                            if (err) {
-                                                reject("Steem error: " + err);
-                                            }
-                                        })
-
-                                        // making sure its only spending one vote :)
-                                        break;
-                                    }
-                                }
-                            }
-                        })
+            // Graphene votes
+            let content = await apis.getAvalonContent(message.author, message.permlink)
+            let voted = []
+            if (content.json && content.json.refs) for (let i = 0; i < content.json.refs.length; i++) {
+                let ref = content.json.refs[i].split('/')
+                if ((ref[0] == 'steem' && !voted.includes('steem')) ||
+                    (ref[0] == 'hive' && !voted.includes('hive')) ||
+                    (ref[0] == 'blurt' && !voted.includes('blurt'))) {
+                    voted.push(ref[0])
+                    let ops = [graphOps.vote(ref[1],ref[2],weight,ref[0])]
+                    let wifs = [config.steem.wif]
+                    
+                    if (weight >= config.resteem.threshold) {
+                        // Resteem post if voting weight is high enough
+                        ops.push(graphOps.reblog(ref[1],ref[2]))
+                    
+                        if (config.resteem.wif !== config[ref[0]].wif)
+                            wifs.push(config.resteem.wif)
                     }
-                })
-            });
+                    
+                    apis.strToAPI(ref[0]).broadcast.send({ extensions: [], operations: ops },wifs,(err) => {
+                        if (err)
+                            console.log(ref[0] + " error: " + err);
+                    })
+                }
+            }
         })
     },
     database
