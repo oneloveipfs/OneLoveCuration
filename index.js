@@ -73,9 +73,9 @@ async function handleLink(msg) {
         console.log('Get @onelovedtube account error',err)
         return msg.channel.send('An error occured. Please check the logs!')
     }
-    // if (helper.insufficientMana(dtcacc,steemacc,hiveacc)) {
-    //     return msg.channel.send('Voting mana is below required threshold. Please wait for our mana to recharge and try again later.')
-    // }
+    if (!await helper.meetsThreshold()) {
+        return msg.channel.send('The voting account currently has ' + helper.thousandSeperator(javalon.votingPower(dtcacc)) + ' VP but our minimum threshold for curation is ' + helper.thousandSeperator(config.avalon.threshold) + ' VP. Please wait for our VP to regenerate and try again later.')
+    }
     const link = helper.DTubeLink(msg.content);
     let video = new Discord.MessageEmbed();
     video.setFooter(config.discord.footer).setTimestamp();
@@ -396,7 +396,7 @@ client.on('message', async msg => {
                             const emote = client.emojis.find(emoji => emoji.name === "onelovenew");
                             msg.reply(`This video has not received any feedback. ${emote}`)
                         }
-                    });
+                    })
                 }
             }
         } else if (msg.content == '!mana') {

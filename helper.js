@@ -257,22 +257,18 @@ function uppercasefirst(str) {
 function calculateVote(post,efficiency) {
     if (post.one_hundred >= 3)
         return 10000 * efficiency
-    if (post.one_hundred == 2)
-        return 8000 * efficiency
 
     let weight = 0
 
     // add up all the weights
     for (let i = 0; i < post.game_die; i++)
-        weight += 100 * Math.floor(Math.random()*(12-2+1)+2);
+        weight += 100 * Math.floor(Math.random()*(12-2+1)+2)
     for (let i = 0; i < post.heart; i++)
-        weight += 3500;
-    for (let i = 0; i < post.one_hundred; i++)
-        weight += 3500
+        weight += 3000
     for (let i = 0; i < post.up; i++)
-        weight += 2000;
+        weight += 1500
     for (let i = 0; i < post.down; i++)
-        weight -= 500;
+        weight -= 1500
 
     // if there is a disagrement, no vote
     if (weight > 0 && post.down > 0)
@@ -349,9 +345,9 @@ const getRechargeTime = (currentMana, manaToGetRecharged) => {
     }
     rechargeTimeMins = rechargeTimeMins * 60
 
-    let rechargeTime
+    let rechargeTime = ''
     if (rechargeTimeHours > 0)
-        rechargeTime = rechargeTimeHours + ' hrs '
+        rechargeTime += rechargeTimeHours + ' hrs '
     rechargeTime += Math.floor(rechargeTimeMins) + ' mins'
     return rechargeTime
 }
@@ -484,12 +480,13 @@ module.exports = {
 
             // Graphene votes
             let content = await apis.getAvalonContent(message.author, message.permlink)
+            let manas = await apis.getManas(null,config.steem.account,config.hive.account,config.blurt.account)
             let voted = []
             if (content.json && content.json.refs) for (let i = 0; i < content.json.refs.length; i++) {
                 let ref = content.json.refs[i].split('/')
-                if ((ref[0] == 'steem' && !voted.includes('steem')) ||
-                    (ref[0] == 'hive' && !voted.includes('hive')) ||
-                    (ref[0] == 'blurt' && !voted.includes('blurt'))) {
+                if ((ref[0] == 'steem' && !voted.includes('steem') && parseFloat(manas.steem) >= config.steem.threshold) ||
+                    (ref[0] == 'hive' && !voted.includes('hive') && parseFloat(manas.hive) >= config.hive.threshold) ||
+                    (ref[0] == 'blurt' && !voted.includes('blurt') && parseFloat(manas.blurt) >= config.blurt.threshold)) {
                     voted.push(ref[0])
                     let ops = [graphOps.vote(ref[1],ref[2],weight,ref[0])]
                     let wifs = [config[ref[0]].wif]

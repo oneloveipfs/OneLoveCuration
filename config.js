@@ -17,10 +17,6 @@ let config = {
                 check: "✅", // voted
                 cross: "❌", // not voted
             },
-            votes: {
-                min: 100,
-                max: 3500
-            },
             min_age: 5, // minimum post age for voting
             timeout_minutes: 1 // wait x minutes after posting until the bot votes
         },
@@ -30,7 +26,7 @@ let config = {
         api: 'https://avalon.oneloved.tube',
         account: '',
         wif: '',
-        vpMultiplier: 4,
+        vpMultiplier: 10,
         vpToSpendForFeedback: 20,
         tag: '',
         threshold: 100000
