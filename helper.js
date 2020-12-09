@@ -233,7 +233,7 @@ const graphOps = {
             voter: config[network].account,
             author: author,
             permlink: link,
-            weight: weight
+            weight: Math.max(weight,10000)
         }]
     },
     reblog: (author,link) => {
@@ -276,7 +276,7 @@ function calculateVote(post,efficiency) {
     
     // maximum voting weight possible is 100%
     if (weight * efficiency > 10000) {
-        return 10000   
+        return 10000
     } else if (weight < 0) {
         return weight
     } else {

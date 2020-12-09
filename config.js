@@ -59,25 +59,18 @@ let config = {
         "d00k13",
         "graylan",
         "gray00",
-        "toddmck",
         "techcoderx",
-        "zainenn",
         "priyanarc",
-        "deepsouthpiddlin",
-        "vaultec"
+        "vaultec",
+        "birdinc"
     ],
-    autovoteList: [
+    boostedAccs: [
         "mvd",
         "d00k13",
         "vaultec",
-        "deepsouthpiddlin",
-        "priyanarc",
-        "gaborockstar",
-        "kaerpediem",
-        "dpet",
-        "dtube",
-        "chimzycash"
+        "dtube"
     ],
+    boostedEfficiency: 5,
     blacklistedUsers: [
         "muhammadrizki96",
         "jacksonchakma",

@@ -80,7 +80,6 @@ async function handleLink(msg) {
     let video = new Discord.MessageEmbed();
     video.setFooter(config.discord.footer).setTimestamp();
     let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.techcoderx.com/v/', '').split('/')
-    if (config.autovoteList.includes(authorInformation[0])) return msg.channel.send('Author is in our autovote list therefore cannot be manually curated.')
     if (config.blacklistedUsers.includes(authorInformation[0])) return msg.channel.send('Author is in the curation blacklist.')
     try {
         dtccontent = await helper.apis.getAvalonContent(authorInformation[0], authorInformation[1])
@@ -95,7 +94,9 @@ async function handleLink(msg) {
     if (posted_ago < config.discord.curation.min_age) {
         waitTime = config.discord.curation.min_age - posted_ago
     }
-    if (!json.files || (!json.files.ipfs || !json.files.ipfs.vid || !json.files.ipfs.vid.src) &&
+    if (config.boostedAccs.includes(authorInformation[0]))
+        efficiency = config.boostedEfficiency
+    else if (!json.files || (!json.files.ipfs || !json.files.ipfs.vid || !json.files.ipfs.vid.src) &&
                        (!json.files.btfs || !json.files.btfs.vid || !json.files.btfs.vid.src) &&
                        (!json.files.sia || !json.files.sia.vid || !json.files.sia.vid.src)) {
         efficiency = 0.5
