@@ -90,8 +90,8 @@ async function handleLink(msg) {
     let json = dtccontent.json
     let posted_ago = Math.round(helper.getMinutesSincePost(new Date(dtccontent.ts)));
     let waitTime = config.discord.curation.timeout_minutes
-	let delta_time = (Math.random() < 0.5 ? -1 : 1) * Math.random() * config.discord.curation.timeout_delta_percentage * config.discord.curation.timeout_minutes
-	waitTime = waitTime + delta_time
+    let delta_time = (Math.random() < 0.5 ? -1 : 1) * Math.random() * config.discord.curation.timeout_delta_percentage * config.discord.curation.timeout_minutes
+    waitTime = waitTime + delta_time
     let efficiency = 1
     if (posted_ago < config.discord.curation.min_age) {
         waitTime = config.discord.curation.min_age - posted_ago
