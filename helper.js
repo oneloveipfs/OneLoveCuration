@@ -58,6 +58,21 @@ database.getMessagesToVote = async () => {
     })
 }
 
+database.newUserSignupOnDiscord = async (discord_username, discord_tag) => {
+    return new Promise((resolve, reject) => {
+		let onetime_token = Math.floor(Math.random() * (99999999999 - 10000000000 + 1)) + 10000000000;
+        let sql = "INSERT INTO users (discord_username, discord_tag, onetime_token) VALUES (?, ?, ?);";
+        database.query(sql, [discord_username, discord_tag, onetime_token], (err, result) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            } else {
+                resolve(true);
+		    }
+		})
+    })
+}
+
 database.getMessage = async (author, permlink) => {
     return new Promise((resolve, reject) => {
         let sql = "SELECT * FROM message where author = ? and permlink = ?";
