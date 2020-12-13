@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS `message` (
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `dtube_username` varchar(50),
-  `discord_username` varchar(32) NOT NULL,
-  `discord_tag` varchar(11) NOT NULL,
+  `dtube_username` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `discord_id` varchar(32) NOT NULL,
   `onetime_token` varchar(20) NOT NULL,
+  `verification_block` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
