@@ -121,11 +121,15 @@ async function handleLink(msg) {
         let exist = await helper.database.existMessage(dtccontent.author, dtccontent.link);
         if (!exist) {
             let embed = await msg.channel.send({embed: video})
-            let clockReaction = await embed.react(config.discord.curation.other_emojis.clock)
+            let clockReaction = await embed.react(config.discord.curation.other_emojis.clock);
+            let botReactions = [];
+            for (let emoji in config.discord.curation.curation_emojis) {
+              botReactions[emoji] = await embed.react(config.discord.curation.curation_emojis[emoji]);
+            }
             setTimeout(async () => {
                 clockReaction.remove();
                 let message = await helper.database.getMessage(dtccontent.author, dtccontent.link)
-                helper.vote(message, client, efficiency).then(async () => {
+                await helper.vote(message, client, efficiency).then(async () => {
                     let msg = await helper.database.getMessage(dtccontent.author, dtccontent.link)
                     embed.react(config.discord.curation.other_emojis.check);
                     video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
@@ -138,6 +142,9 @@ async function handleLink(msg) {
                     console.error('Failed to vote! Error: ' + error)
                     embed.react(config.discord.curation.other_emojis.cross)
                 })
+                for (let emoji in botReactions) {
+                  msg.reactions.resolve(botReactions[emoji]).users.remove(client.user.id);
+                }
             }, 60 * 1000 * waitTime)
             helper.database.addMessage(embed.id, dtccontent.author, dtccontent.link)
         } else msg.channel.send("This video has already been posted to the curation channel.")
@@ -162,7 +169,26 @@ function rechargeTextGraph(threshold,full) {
 
 client.on('message', async msg => {
     if (msg.author.bot) return
-
+    if (msg.content.startsWith("!linkaccount")) {
+        if (msg.guild === null) {
+          let onetime_token = await helper.database.checkIfUserExist(msg.author.id);
+          if(onetime_token != false) {
+            msg.author.send("Your onetime token, to be put onchain as account position (temporarily), is: "+onetime_token+"\nThen trigger a !verifyaccount *username*\n with your dtube username.");
+          } else {
+            msg.author.send("Error on your request, ask the admin to check the logs and database.");
+          }
+        } else {
+          msg.channel.send("Account linking is only allowed in a private direct message.");
+        }
+    }
+    if (msg.content.startsWith("!verifyaccount")) {
+      let dtubeAccount = msg.content.split(" ");
+      if(await helper.database.verifyUserOnDtube(msg.author.id, dtubeAccount[1])) {
+        msg.author.send("User verified, welcome!");
+      } else {
+        msg.author.send("Error on verifying you! Check your data.");
+      }
+    }
     if (msg.content.startsWith("!table")) {
         let days = parseInt(msg.content.replace("!table", "").trim());
         if (isNaN(days)) {
@@ -462,7 +488,8 @@ client.on('message', async msg => {
 });
 
 client.on('messageReactionAdd', (reaction, user) => {
-    helper.database.updateReactions(reaction.message.id, helper.countReaction(reaction.message))
+    if (user.id != client.user.id)
+      helper.database.updateReactions(reaction.message.id, helper.countReaction(reaction.message))
 });
 
 client.on('messageReactionRemove', (reaction, user) => {
