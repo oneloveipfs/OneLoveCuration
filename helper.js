@@ -101,10 +101,8 @@ database.verifyUserOnDtube = async (discord_id, dtube_account) => {
           let accountLocation = accountJSON.json.profile.location;
           if(accountLocation == onetime_token) {
               let block_height = await apis.getAvalonBlockchainHeight();
-              block_height = block_height.count;
-              console.log(block_height);
               let sql = "UPDATE users SET dtube_username=?, verification_block=? WHERE discord_id=? AND dtube_username IS NULL;";
-              return await database.query(sql, [dtube_account, block_height, discord_id], (err, result) => {
+              return await database.query(sql, [dtube_account, block_height.count, discord_id], (err, result) => {
                   if (err) {
                       r = err;
                       console.log(err);
