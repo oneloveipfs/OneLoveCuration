@@ -233,7 +233,7 @@ const graphOps = {
             voter: config[network].account,
             author: author,
             permlink: link,
-            weight: Math.max(weight,10000)
+            weight: Math.min(weight,10000)
         }]
     },
     reblog: (author,link) => {
