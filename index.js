@@ -198,12 +198,6 @@ client.on('message', async msg => {
             },
             voteValue: (cb) => {
                 helper.getVoteValue(10000,user,network,(err,vote_value) => cb(err,vote_value))
-            },
-            blacklist: (cb) => {
-                if (network === 'hive')
-                    getBlacklistEntries(user).then(blacklist => cb(null,blacklist))
-                else
-                    cb(null,{entries: [], text: '', count: 0}) // TODO: Blacklists for more networks
             }
         },async (errors,results) => {
             let status = new Discord.MessageEmbed();
@@ -240,11 +234,9 @@ client.on('message', async msg => {
             status.addField("Current " + networkUCase + " Power:", results.spCount.toFixed(3) + " " + networkUCase.substr(0,1) + "P", true);
             status.addField("Current Voting Power:", results.mana + "%", true);
 
-            if (results.blacklist.count > 0 && !config.team.includes(user)) {
-                status.addField("Blacklisted:",results.blacklist.text);
-            } else if (config.team.includes(user)) {
+            if (config.team.includes(user))
                 status.addField("OneLoveDTube Team Member:","Yes 🤟");
-            }
+            
             msg.channel.send(status)
         })
     }
