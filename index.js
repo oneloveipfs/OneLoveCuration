@@ -53,15 +53,6 @@ async function countCurators() {
     return guild.roles.cache.get(config.discord.curation.role).members.size
 }
 
-async function getBlacklistEntries(user) {
-    let entries = await (await fetch("http://blacklist.usehive.com/user/" + user)).json();
-    return {
-        entries: entries.blacklisted,
-        text: entries.blacklisted.join(", "),
-        count: entries.blacklisted.length
-    }
-}
-
 async function handleLink(msg) {
     // Check if voting mana is above threshold
     let steemacc, hiveacc, dtcacc, dtccontent
