@@ -99,7 +99,7 @@ async function handleLink(msg) {
     else if (!json.files || (!json.files.ipfs || !json.files.ipfs.vid || !json.files.ipfs.vid.src) &&
                        (!json.files.btfs || !json.files.btfs.vid || !json.files.btfs.vid.src) &&
                        (!json.files.sia || !json.files.sia.vid || !json.files.sia.vid.src)) {
-        efficiency = 0.5
+        efficiency = config.centralizedUploadEfficiency
     }
     if (posted_ago > 2880)
         return msg.channel.send("This video is too old for curation through oneloved.tube");

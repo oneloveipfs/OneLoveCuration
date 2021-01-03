@@ -22,6 +22,7 @@ let config = {
         },
         footer: 'Powered by oneloved.tube curation'
     },
+    centralizedUploadEfficiency: 0.2,
     avalon: {
         api: 'https://avalon.oneloved.tube',
         account: '',
