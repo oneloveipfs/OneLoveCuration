@@ -408,7 +408,7 @@ client.on('message', async msg => {
                 .addField('Hive - ' + manas.hive + ' %',rechargeTextGraph(rechargeTimes.hive,fullRechargeTimes.hive),false)
                 .addField('Steem - ' + manas.steem + ' %',rechargeTextGraph(rechargeTimes.steem,fullRechargeTimes.steem),false)
                 .addField('Blurt - ' + manas.blurt + ' %',rechargeTextGraph(rechargeTimes.blurt,fullRechargeTimes.blurt),false)
-                .setTitle('Current voting manas for @' + config[network].account)
+                .setTitle('Current voting manas')
                 .setFooter(config.discord.footer)
                 .setTimestamp()
 
