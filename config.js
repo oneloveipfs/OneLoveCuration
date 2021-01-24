@@ -55,7 +55,6 @@ let config = {
         account: '',
         threshold: 8000 // set this to any value above 10000 to disable resteem, or 1 to resteem all upvoted posts
     },
-    mainAccount: 'onelovedtube', // default account for obtaining voting mana
     team: [
         "d00k13",
         "graylan",

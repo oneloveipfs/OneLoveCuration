@@ -57,11 +57,11 @@ async function handleLink(msg) {
     // Check if voting mana is above threshold
     let steemacc, hiveacc, dtcacc, dtccontent
     try {
-        steemacc = await helper.apis.getAccount(config.mainAccount,'steem')
-        hiveacc = await helper.apis.getAccount(config.mainAccount,'hive')
-        dtcacc = await helper.apis.getAvalonAccount(config.mainAccount)
+        steemacc = config.steem.account ? await helper.apis.getAccount(config.steem.account,'steem') : {}
+        hiveacc = config.hive.account ? await helper.apis.getAccount(config.hive.account,'hive') : {}
+        dtcacc = config.avalon.account ? await helper.apis.getAvalonAccount(config.avalon.account) : {}
     } catch (e) {
-        console.log('Get @onelovedtube account error',err)
+        console.log('Get @onelovedtube account error',e)
         return msg.channel.send('An error occured. Please check the logs!')
     }
     if (!await helper.meetsThreshold()) {
@@ -172,7 +172,7 @@ client.on('message', async msg => {
         let user = msg.content.replace('!steem','').replace('!hive','').replace('!blurt','').trim()
 
         if (steem.utils.validateAccountName(user) !== null)
-            user = config.mainAccount
+            user = config[network].account
 
         let res = await helper.apis.getAccount(user,network)
         if (res.length === 0)
@@ -193,7 +193,7 @@ client.on('message', async msg => {
         },async (errors,results) => {
             let status = new Discord.MessageEmbed();
             status.setFooter(config.discord.footer);
-            if (user === config.mainAccount) {
+            if (user === config[network].account) {
                 status.setTitle("OveLoveCuration Bot - Status Overview");
             } else {
                 status.setTitle("@" + user + " - Status Overview");
@@ -216,7 +216,7 @@ client.on('message', async msg => {
 
             status.setThumbnail(avatarUrl);
             status.setColor(0x009aa3);
-            if (user === config.mainAccount) {
+            if (user === config[network].account) {
                 status.addField("Total Curated Videos:", results.msgCount[0].count, true);
                 status.addField("Total Number of Curators:", await countCurators(), true);
             }
@@ -408,7 +408,7 @@ client.on('message', async msg => {
                 .addField('Hive - ' + manas.hive + ' %',rechargeTextGraph(rechargeTimes.hive,fullRechargeTimes.hive),false)
                 .addField('Steem - ' + manas.steem + ' %',rechargeTextGraph(rechargeTimes.steem,fullRechargeTimes.steem),false)
                 .addField('Blurt - ' + manas.blurt + ' %',rechargeTextGraph(rechargeTimes.blurt,fullRechargeTimes.blurt),false)
-                .setTitle('Current voting manas for @' + config.mainAccount)
+                .setTitle('Current voting manas for @' + config[network].account)
                 .setFooter(config.discord.footer)
                 .setTimestamp()
 
