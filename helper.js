@@ -58,6 +58,65 @@ database.getMessagesToVote = async () => {
     })
 }
 
+database.newUserSignupOnDiscord = async (discord_id) => {
+    return new Promise((resolve, reject) => {
+        let onetime_token = Math.floor(Math.random() * (99999999999 - 10000000000 + 1)) + 10000000000;
+        let sql = "INSERT INTO users (discord_id, onetime_token) VALUES (?, ?);";
+        database.query(sql, [discord_id, onetime_token], (err, result) => {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(onetime_token);
+       }
+      })
+    })
+}
+
+database.checkIfUserExist = (discord_id) => {
+  return new Promise((resolve, reject) => {
+    let sql = "SELECT onetime_token FROM users WHERE discord_id = ?;";
+    database.query(sql, [discord_id], (err, result) => {
+       if (err) {
+          console.log(err);
+          reject(err);
+       } else if (result.length == 1) {
+          let exists = true;
+          resolve(result[0].onetime_token);
+       } else if (result.length == 0) {
+          let exists = false;
+          let onetime_token = false;
+          resolve(false);
+       }
+    })
+  }).then((onetime_token) => { if (onetime_token == false) {return database.newUserSignupOnDiscord(discord_id)} else {return onetime_token}; });
+}
+
+database.verifyUserOnDtube = async (discord_id, dtube_account) => {
+  let onetime_token = await database.checkIfUserExist(discord_id);
+  let r = false;
+  if(onetime_token!=false) {
+      let accountJSON = await apis.getAvalonAccount(dtube_account);
+      if (typeof accountJSON.json != 'undefined') {
+          let accountLocation = accountJSON.json.profile.location;
+          if(accountLocation == onetime_token) {
+              let block_height = await apis.getAvalonBlockchainHeight();
+              let sql = "UPDATE users SET dtube_username=?, verification_block=? WHERE discord_id=? AND dtube_username IS NULL;";
+              return await database.query(sql, [dtube_account, block_height.count, discord_id], (err, result) => {
+                  if (err) {
+                      r = err;
+                      console.log(err);
+                  } else {
+                      return true;
+                  }
+              });
+          }
+      }
+  }
+  return r;
+};
+
+
 database.getMessage = async (author, permlink) => {
     return new Promise((resolve, reject) => {
         let sql = "SELECT * FROM message where author = ? and permlink = ?";
@@ -166,6 +225,12 @@ const apis = {
             rs(r)
         }))
     },
+    getAvalonBlockchainHeight: () => {
+        return new Promise((rs,rj) => javalon.getBlockchainHeight((e,r) => {
+            if (e) return rj(e)
+            rs(r)
+        }))
+    },
     getAvalonContent: (name,link) => {
         return new Promise((rs,rj) => javalon.getContent(name,link,(e,r) => {
             if (e) return rj(e)
@@ -254,21 +319,26 @@ function uppercasefirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-function calculateVote(post,efficiency) {
-    if (post.one_hundred >= 3)
-        return 10000 * efficiency
+function calculateVote(client,post,efficiency) {
 
     let weight = 0
+    let count = countReaction(post);
 
     // add up all the weights
-    for (let i = 0; i < post.game_die; i++)
-        weight += 100 * Math.floor(Math.random()*(12-2+1)+2)
-    for (let i = 0; i < post.heart; i++)
-        weight += 3000
-    for (let i = 0; i < post.up; i++)
-        weight += 1500
-    for (let i = 0; i < post.down; i++)
-        weight -= 1500
+    if (count.one_hundred >= 3)
+        return 10000 * efficiency
+    for (let i = 0; i < count.game_die; i++)
+        if(post.sender != client.user.id)
+            weight += 100 * Math.floor(Math.random()*(12-2+1)+2)
+    for (let i = 0; i < count.heart; i++)
+        if(post.sender != client.user.id)
+            weight += 3000
+    for (let i = 0; i < count.up; i++)
+        if(post.sender != client.user.id)
+            weight += 1500
+    for (let i = 0; i < count.down; i++)
+        if(post.sender != client.user.id)
+            weight -= 1500
 
     // if there is a disagrement, no vote
     if (weight > 0 && post.down > 0)
@@ -286,12 +356,14 @@ function calculateVote(post,efficiency) {
 
 function countReaction(message) {
     let reactions = {}
-    for (const key in config.discord.curation.curation_emojis)
+    for (const key in config.discord.curation.curation_emojis) {
         reactions[key] =
             message.reactions.cache.get(config.discord.curation.curation_emojis[key]) ?
                 message.reactions.cache.get(config.discord.curation.curation_emojis[key]).count
-                : 0
-
+                : 0;
+        reactions[key] = reactions[key] -1;
+    }
+    
     return reactions;
 }
 
@@ -443,7 +515,7 @@ module.exports = {
                 .channels.cache.get(config.discord.curation.channel)
                 .messages.cache.get(message.discord_id)
             await database.updateReactions(post.id, countReaction(post))
-            let weight = calculateVote(message, efficiency);
+            let weight = calculateVote(client, post, efficiency);
             if (weight === 0)
                 return reject('Weight=0')
 

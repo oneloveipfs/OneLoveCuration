@@ -18,7 +18,8 @@ let config = {
                 cross: "❌", // not voted
             },
             min_age: 5, // minimum post age for voting
-            timeout_minutes: 1 // wait x minutes after posting until the bot votes
+            timeout_minutes: 1, // wait x minutes after posting until the bot votes
+            timeout_delta_percentage: 0.15 //Percent to add, or subtract to make timeout_minutes a little random. The bot will wait a random time in the range [timeout_minutes +- timeout_minutes*timeout_delta_percentage]
         },
         footer: 'Powered by oneloved.tube curation'
     },

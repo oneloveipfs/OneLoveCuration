@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS `message` (
   UNIQUE KEY `message_discord_id_uindex` (`discord_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dtube_username` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `discord_id` varchar(32) NOT NULL,
+  `onetime_token` varchar(20) NOT NULL,
+  `verification_block` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `feedback` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `discord` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,

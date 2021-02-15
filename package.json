@@ -13,7 +13,7 @@
     "@hiveio/hive-js": "^0.8.8",
     "async": "^2.6.2",
     "discord.js": "^12.4.1",
-    "javalon": "^1.0.28",
+    "javalon": "^1.0.30",
     "mysql": "^2.18.1",
     "node-fetch": "^2.3.0",
     "steem": "^0.7.4"
