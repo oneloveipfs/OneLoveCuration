@@ -20,7 +20,8 @@ let config = {
             min_age: 5, // minimum post age for voting
             timeout_minutes: 1 // wait x minutes after posting until the bot votes
         },
-        footer: 'Powered by oneloved.tube curation'
+        footer: 'Powered by oneloved.tube curation',
+        downvoteOnlyWarning: '⚠ Blacklisted user'
     },
     centralizedUploadEfficiency: 0.2,
     avalon: {
@@ -62,7 +63,8 @@ let config = {
         "techcoderx",
         "priyanarc",
         "vaultec",
-        "birdinc"
+        "birdinc",
+        "mondoshawan"
     ],
     boostedAccs: [
         "mvd",
@@ -77,6 +79,13 @@ let config = {
         "kawaiicrush",
         "steemnurse",
         "girlygamer"
+    ],
+    noVotes: [
+        "techcoderx",
+        "aliveprotocol",
+        "alive",
+        "randomvlogs",
+        "onelovedtube"
     ],
     database: {
         host: "localhost",

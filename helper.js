@@ -254,19 +254,21 @@ function uppercasefirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-function calculateVote(post,efficiency) {
-    if (post.one_hundred >= 3)
+function calculateVote(post,efficiency,flagsOnly) {
+    if (!flagsOnly && post.one_hundred >= 3)
         return 10000 * efficiency
 
     let weight = 0
 
     // add up all the weights
-    for (let i = 0; i < post.game_die; i++)
-        weight += 100 * Math.floor(Math.random()*(12-2+1)+2)
-    for (let i = 0; i < post.heart; i++)
-        weight += 3000
-    for (let i = 0; i < post.up; i++)
-        weight += 1500
+    if (!flagsOnly) {
+        for (let i = 0; i < post.game_die; i++)
+            weight += 100 * Math.floor(Math.random()*(12-2+1)+2)
+        for (let i = 0; i < post.heart; i++)
+            weight += 3000
+        for (let i = 0; i < post.up; i++)
+            weight += 1500
+    }
     for (let i = 0; i < post.down; i++)
         weight -= 1500
 
@@ -437,20 +439,20 @@ module.exports = {
     },
     thousandSeperator,
     uppercasefirst,
-    vote: async (message, client, efficiency) => {
+    vote: async (message, client, efficiency, flagsOnly) => {
         return new Promise(async (resolve, reject) => {
             let post = await client.guilds.cache.get(config.discord.curation.guild)
                 .channels.cache.get(config.discord.curation.channel)
                 .messages.cache.get(message.discord_id)
             await database.updateReactions(post.id, countReaction(post))
-            let weight = calculateVote(message, efficiency);
+            let weight = calculateVote(message, efficiency, flagsOnly);
             if (weight === 0)
                 return reject('Weight=0')
 
             // voting on avalon
             let currentAvalonVP = await apis.getAvalonVP(config.avalon.account)
             let vpToSpend = Math.floor((weight / 10000) * (config.avalon.vpMultiplier / 100) * currentAvalonVP)
-            if (vpToSpend < 1) vpToSpend = 1
+            if (vpToSpend === 0) vpToSpend = 1
 
             console.log('voting', message.author + '/' + message.permlink, weight, vpToSpend)
 

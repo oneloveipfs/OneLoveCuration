@@ -55,7 +55,7 @@ async function countCurators() {
 
 async function handleLink(msg) {
     // Check if voting mana is above threshold
-    let steemacc, hiveacc, dtcacc, dtccontent
+    let steemacc, hiveacc, dtcacc, dtccontent, flagsOnly
     try {
         steemacc = config.steem.account ? await helper.apis.getAccount(config.steem.account,'steem') : {}
         hiveacc = config.hive.account ? await helper.apis.getAccount(config.hive.account,'hive') : {}
@@ -69,9 +69,14 @@ async function handleLink(msg) {
     }
     const link = helper.DTubeLink(msg.content);
     let video = new Discord.MessageEmbed();
-    video.setFooter(config.discord.footer).setTimestamp();
     let authorInformation = link.replace('/#!', '').replace('https://d.tube/v/', '').replace('https://dtube.techcoderx.com/v/', '').split('/')
-    if (config.blacklistedUsers.includes(authorInformation[0])) return msg.channel.send('Author is in the curation blacklist.')
+    if (config.noVotes.includes(authorInformation[0]))
+        return msg.channel.send('Author is in no votes list.')
+    else if (config.blacklistedUsers.includes(authorInformation[0])) {
+        video.setFooter(config.discord.downvoteOnlyWarning).setTimestamp()
+        flagsOnly = true
+    } else
+        video.setFooter(config.discord.footer).setTimestamp();
     try {
         dtccontent = await helper.apis.getAvalonContent(authorInformation[0], authorInformation[1])
     } catch (e) {
@@ -114,7 +119,7 @@ async function handleLink(msg) {
             setTimeout(async () => {
                 clockReaction.remove();
                 let message = await helper.database.getMessage(dtccontent.author, dtccontent.link)
-                helper.vote(message, client, efficiency).then(async () => {
+                helper.vote(message, client, efficiency, flagsOnly).then(async () => {
                     let msg = await helper.database.getMessage(dtccontent.author, dtccontent.link)
                     embed.react(config.discord.curation.other_emojis.check);
                     video.addField("Vote Weight", (msg.vote_weight / 100) + "%", true);
