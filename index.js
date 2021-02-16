@@ -421,6 +421,34 @@ client.on('message', async msg => {
 
         } else if (helper.DTubeLink(msg.content)) {
             handleLink(msg)
+        } else if (msg.content === '!config') {
+            let result = JSON.stringify({
+                min_age: config.discord.curation.min_age,
+                timeout_minutes: config.discord.curation.timeout_minutes,
+                centralized_upload_efficiency: config.centralizedUploadEfficiency,
+                boosted_efficiency: config.boostedEfficiency,
+                avalon: {
+                    api: config.avalon.api,
+                    account: config.avalon.account,
+                    vpMultiplier: config.avalon.vpMultiplier,
+                    threshold: config.avalon.threshold
+                },
+                steem: {
+                    api: config.steem.api,
+                    account: config.steem.account,
+                    threshold: config.steem.threshold
+                },
+                hive: {
+                    api: config.hive.api,
+                    account: config.hive.account,
+                    threshold: config.hive.threshold
+                },
+                resteem: {
+                    account: config.resteem.account,
+                    threshold: config.resteem.threshold
+                }
+            },null,4)
+            msg.channel.send('```json\n'+result+'\n```')
         }
     }
 
