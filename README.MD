@@ -1,6 +1,6 @@
 # DTube Curation Bot
 
-This bot is used on the official OneLoveDTube Discord Server ([join now](https://discord.gg/Sc4utKr)) to curate videos posted on [d.tube](https://d.tube) and [dtube.network](https://dtube.network)
+This bot is used on the official OneLoveDTube Discord Server ([join now](https://discord.gg/Sc4utKr)) to curate videos posted on [d.tube](https://d.tube) and [OneLoveIPFS uploader](https://uploader.oneloved.tube)
 
 
 ### Requirements
