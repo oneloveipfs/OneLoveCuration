@@ -85,8 +85,8 @@ let config = {
         "aliveprotocol",
         "alive",
         "randomvlogs",
-        "onelovedtube"
-	"shuvo3555"
+        "onelovedtube",
+	"shuvo3555",
 	"mdaminulislam"
     ],
     database: {
