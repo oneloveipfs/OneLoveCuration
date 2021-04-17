@@ -86,6 +86,8 @@ let config = {
         "alive",
         "randomvlogs",
         "onelovedtube"
+	"shuvo3555"
+	"mdaminulislam"
     ],
     database: {
         host: "localhost",
