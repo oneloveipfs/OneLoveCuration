@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@blurtfoundation/blurtjs": "^0.1.1",
-    "@hiveio/hive-js": "^0.8.8",
+    "@hiveio/hive-js": "^2.0.4",
     "async": "^2.6.2",
     "discord.js": "^12.4.1",
     "javalon": "^1.0.28",

@@ -16,9 +16,8 @@ const helper = require('./helper');
 
 steem.api.setOptions({url: config.steem.api , useAppbaseApi: true})
 javalon.init({ api: config.avalon.api })
-hive.api.setOptions({url: config.hive.api, useAppbaseApi: true, rebranded_api: true})
-hive.broadcast.updateOperations()
-blurt.api.setOptions({ url: config.blurt.api })
+hive.api.setOptions({url: config.hive.api, useAppbaseApi: true})
+blurt.api.setOptions({ url: config.blurt.api, useAppbaseApi: true})
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`)
