@@ -255,7 +255,7 @@ function uppercasefirst(str) {
 }
 
 function calculateVote(post,efficiency,flagsOnly) {
-    if (!flagsOnly && post.one_hundred >= 3)
+    if (!flagsOnly && post.one_hundred >= 1)
         return 10000 * efficiency
 
     let weight = 0
@@ -263,14 +263,14 @@ function calculateVote(post,efficiency,flagsOnly) {
     // add up all the weights
     if (!flagsOnly) {
         for (let i = 0; i < post.game_die; i++)
-            weight += 100 * Math.floor(Math.random()*(12-2+1)+2)
+            weight += 100 * Math.floor(Math.random()*(25-2+1)+2)
         for (let i = 0; i < post.heart; i++)
-            weight += 3000
+            weight += 6000
         for (let i = 0; i < post.up; i++)
-            weight += 1500
+            weight += 3000
     }
     for (let i = 0; i < post.down; i++)
-        weight -= 1500
+        weight -= 3000
 
     // if there is a disagrement, no vote
     if (weight > 0 && post.down > 0)
