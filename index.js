@@ -442,6 +442,11 @@ client.on('message', async msg => {
                     account: config.hive.account,
                     threshold: config.hive.threshold
                 },
+                blurt: {
+                    api: config.blurt.api,
+                    account: config.blurt.account,
+                    threshold: config.blurt.threshold
+                },
                 resteem: {
                     account: config.resteem.account,
                     threshold: config.resteem.threshold
