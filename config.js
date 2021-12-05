@@ -78,7 +78,8 @@ let config = {
         "jacksonchakma",
         "kawaiicrush",
         "steemnurse",
-        "girlygamer"
+        "girlygamer",
+	"blind-spot"
     ],
     noVotes: [
         "techcoderx",
